@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>My Kanban Board</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kanban">
+<meta name="theme-color" content="#c8601a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #c8a97e 0%, #e8b97e 40%, #f0c070 70%, #e07050 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* NAV */
+  .topnav {
+    background: rgba(0,0,0,0.30);
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .topnav-left { display: flex; align-items: center; gap: 14px; }
+  .logo { display: flex; align-items: center; gap: 6px; }
+  .logo svg { flex-shrink: 0; }
+  .logo span { color: #fff; font-weight: 800; font-size: 17px; }
+  .nav-btn { background: rgba(255,255,255,0.18); border-radius: 4px; padding: 5px 12px; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; border: none; }
+  #searchInput {
+    background: rgba(255,255,255,0.22);
+    border: none; border-radius: 4px;
+    padding: 7px 16px; color: #fff; font-size: 13px; width: 200px; outline: none;
+  }
+  #searchInput::placeholder { color: rgba(255,255,255,0.7); }
+  .avatars { display: flex; gap: 6px; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 12px;
+  }
+
+  .subnav {
+    background: rgba(0,0,0,0.22);
+    backdrop-filter: blur(6px);
+    padding: 8px 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .subnav-btn { background: rgba(255,255,255,0.20); border-radius: 4px; padding: 5px 10px; color: #fff; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+  .board-title { color: #fff; font-weight: 800; font-size: 15px; margin-left: 6px; }
+  .subnav-right { margin-left: auto; background: rgba(255,255,255,0.20); border-radius: 4px; padding: 5px 12px; color: #fff; font-size: 12px; font-weight: 500; }
+
+  /* BOARD */
+  .board {
+    display: flex;
+    gap: 10px;
+    padding: 14px;
+    overflow-x: auto;
+    align-items: flex-start;
+    min-height: calc(100vh - 88px);
+  }
+
+  /* COLUMN */
+  .column {
+    flex: 0 0 270px;
+    min-width: 255px;
+    background: #ebecf0;
+    border-radius: 10px;
+    transition: box-shadow 0.15s;
+  }
+  .column.drag-over {
+    box-shadow: 0 0 0 2px #0052cc inset;
+    background: #dde0e4;
+  }
+  .col-header {
+    padding: 12px 14px 8px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .col-title { font-weight: 700; font-size: 14px; color: #172b4d; }
+  .col-menu { background: none; border: none; color: #6b778c; font-size: 16px; cursor: pointer; padding: 0 4px; border-radius: 4px; letter-spacing: 1px; }
+
+  .cards-list {
+    padding: 0 8px;
+    display: flex; flex-direction: column; gap: 8px;
+    min-height: 8px;
+  }
+
+  /* CARD */
+  .card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 3px rgba(9,30,66,0.13);
+    cursor: grab;
+    transition: box-shadow 0.12s, opacity 0.12s;
+    position: relative;
+    user-select: none;
+  }
+  .card:hover { box-shadow: 0 4px 14px rgba(9,30,66,0.22); }
+  .card.dragging { opacity: 0.4; }
+  .card:hover .card-actions { opacity: 1; }
+
+  .card-actions {
+    position: absolute; top: 6px; right: 6px;
+    display: flex; gap: 2px;
+    opacity: 0; transition: opacity 0.12s;
+  }
+  .card-actions button {
+    background: rgba(9,30,66,0.09); border: none; border-radius: 4px;
+    cursor: pointer; font-size: 11px; padding: 3px 5px; line-height: 1;
+  }
+  .card-actions button:hover { background: rgba(9,30,66,0.18); }
+
+  .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+  .tag {
+    border-radius: 4px; padding: 2px 9px;
+    font-size: 11px; font-weight: 700;
+  }
+  .card-title { font-size: 14px; color: #172b4d; line-height: 1.5; }
+  .card-meta {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: #5e6c84; margin-top: 8px;
+  }
+  .meta-date, .meta-check {
+    display: flex; align-items: center; gap: 3px;
+    border-radius: 3px; padding: 1px 4px;
+  }
+  .meta-done { background: #00C851; color: #fff; font-weight: 700; padding: 1px 6px; }
+
+  .empty-drop {
+    height: 8px; border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .empty-drop.active {
+    height: 48px;
+    background: rgba(0,82,204,0.12);
+    border: 2px dashed #0052cc;
+  }
+
+  /* ADD CARD FORM */
+  .add-form {
+    background: #fff; border-radius: 8px; padding: 10px 12px;
+    box-shadow: 0 1px 3px rgba(9,30,66,0.13);
+    display: none; flex-direction: column; gap: 7px;
+  }
+  .add-form.open { display: flex; }
+  .add-form textarea, .add-form input, .add-form select {
+    border: 1px solid #dfe1e6; border-radius: 4px;
+    padding: 5px 8px; font-size: 12px; color: #172b4d;
+    outline: none; font-family: inherit; width: 100%; resize: none;
+  }
+  .add-form textarea { border-color: #0052cc; border-width: 2px; font-size: 13px; }
+  .add-form-btns { display: flex; gap: 6px; align-items: center; }
+  .btn-add { background: #0052cc; border: none; border-radius: 4px; color: #fff; font-weight: 700; font-size: 13px; padding: 6px 14px; cursor: pointer; }
+  .btn-cancel-form { background: none; border: none; color: #6b778c; font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+
+  /* ADD ANOTHER CARD */
+  .add-card-btn {
+    display: flex; align-items: center; gap: 5px;
+    width: 100%; background: none; border: none;
+    cursor: pointer; color: #6b778c; font-size: 13px; font-weight: 500;
+    padding: 8px 12px 12px; border-radius: 0 0 10px 10px;
+    text-align: left; transition: background 0.12s, color 0.12s;
+  }
+  .add-card-btn:hover { background: rgba(9,30,66,0.08); color: #172b4d; }
+
+  /* ADD LIST */
+  .add-list-btn {
+    flex: 0 0 auto;
+    background: rgba(255,255,255,0.22);
+    backdrop-filter: blur(4px);
+    border-radius: 10px; padding: 10px 16px;
+    cursor: pointer; color: #fff; font-weight: 600; font-size: 13px;
+    display: flex; align-items: center; gap: 5px;
+    height: fit-content; white-space: nowrap; border: none;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(9,30,66,0.54);
+    display: none; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #ebecf0; border-radius: 12px; width: 420px;
+    box-shadow: 0 8px 40px rgba(9,30,66,0.4); overflow: hidden;
+  }
+  .modal-top { background: #fff; padding: 20px 24px 16px; border-bottom: 1px solid #dfe1e6; }
+  .modal-label { font-size: 11px; font-weight: 700; color: #5e6c84; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .modal-top textarea {
+    border: 2px solid #0052cc; border-radius: 4px;
+    padding: 8px 10px; font-size: 14px; color: #172b4d;
+    resize: none; outline: none; font-family: inherit;
+    width: 100%; font-weight: 500;
+  }
+  .modal-body { padding: 16px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .modal-body label { font-size: 11px; font-weight: 700; color: #5e6c84; text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 4px; }
+  .modal-body input, .modal-body select {
+    background: #fff; border: 1px solid #dfe1e6; border-radius: 4px;
+    padding: 7px 10px; font-size: 13px; color: #172b4d;
+    outline: none; width: 100%; font-family: inherit;
+  }
+  .modal-btns { display: flex; gap: 8px; margin-top: 4px; }
+  .btn-save { flex: 1; background: #0052cc; border: none; border-radius: 4px; color: #fff; font-weight: 700; font-size: 13px; padding: 9px; cursor: pointer; }
+  .btn-cancel { background: none; border: none; color: #6b778c; font-size: 13px; padding: 9px 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="topnav-left">
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+        <rect width="40" height="40" rx="6" fill="#0052CC"/>
+        <rect x="6" y="8" width="11" height="22" rx="2" fill="white"/>
+        <rect x="23" y="8" width="11" height="14" rx="2" fill="white"/>
+      </svg>
+      <span>Trello</span>
+    </div>
+    <button class="nav-btn">Workspaces ∨</button>
+  </div>
+  <input id="searchInput" placeholder="🔍  Jump to..." oninput="renderAll()">
+  <div class="avatars">
+    <div class="avatar" style="background:#FF8C00">M</div>
+    <div class="avatar" style="background:#2196F3">J</div>
+    <div class="avatar" style="background:#00C851">A</div>
+  </div>
+</div>
+
+<!-- SUB NAV -->
+<div class="subnav">
+  <button class="subnav-btn">⊞ Board</button>
+  <span class="board-title">My Kanban Board</span>
+  <span style="color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer">☆</span>
+  <span class="subnav-right">⊕ Workspace visible</span>
+  <span id="savedBadge" style="color:#fff;font-size:12px;opacity:0;transition:opacity 0.4s;margin-left:4px;">✅ 저장됨</span>
+  <button onclick="resetAll()" style="margin-left:6px;background:rgba(255,255,255,0.15);border:none;border-radius:4px;padding:5px 10px;color:rgba(255,255,255,0.8);font-size:12px;cursor:pointer;" title="초기 데이터로 리셋">🔄 초기화</button>
+</div>
+
+<!-- BOARD -->
+<div class="board" id="board">
+  <!-- columns injected by JS -->
+  <button class="add-list-btn">+ Add another list</button>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-top">
+      <div class="modal-label">✏️ 카드 수정</div>
+      <textarea id="editTitle" rows="2"></textarea>
+    </div>
+    <div class="modal-body">
+      <div><label>태그 (쉼표 구분)</label><input id="editTags"></div>
+      <div><label>날짜</label><input id="editDate" placeholder="예: Sep 20"></div>
+      <div><label>체크리스트 (예: 2/4)</label><input id="editChecklist"></div>
+      <div>
+        <label>컬럼</label>
+        <select id="editCol">
+          <option value="todo">To Do</option>
+          <option value="inprogress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div class="modal-btns">
+        <button class="btn-save" onclick="saveEdit()">저장</button>
+        <button class="btn-cancel" onclick="document.getElementById('modalOverlay').classList.remove('open')">취소</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────
+const COLUMNS = [
+  { id: 'todo',    label: 'To Do' },
+  { id: 'inprogress', label: 'In Progress' },
+  { id: 'done',       label: 'Done' },
+];
+
+const TAG_COLORS = {
+  'Marketing':  { bg: '#FF8C00', text: '#fff' },
+  'Legal':      { bg: '#00C851', text: '#fff' },
+  'External':   { bg: '#F5C518', text: '#222' },
+  'Design':     { bg: '#00BCD4', text: '#fff' },
+  'Production': { bg: '#9C27B0', text: '#fff' },
+  'Sales':      { bg: '#2196F3', text: '#fff' },
+  '개발':       { bg: '#2196F3', text: '#fff' },
+  '기획':       { bg: '#FF8C00', text: '#fff' },
+  '미팅':       { bg: '#9C27B0', text: '#fff' },
+  '디자인':     { bg: '#00BCD4', text: '#fff' },
+};
+const TAG_PALETTE = [
+  { bg: '#FF8C00', text: '#fff' },
+  { bg: '#00C851', text: '#fff' },
+  { bg: '#F5C518', text: '#222' },
+  { bg: '#00BCD4', text: '#fff' },
+  { bg: '#9C27B0', text: '#fff' },
+  { bg: '#2196F3', text: '#fff' },
+  { bg: '#E91E63', text: '#fff' },
+  { bg: '#4CAF50', text: '#fff' },
+  { bg: '#FF5722', text: '#fff' },
+];
+
+function tagStyle(tag) {
+  if (TAG_COLORS[tag]) return TAG_COLORS[tag];
+  const idx = [...tag].reduce((a, c) => a + c.charCodeAt(0), 0) % TAG_PALETTE.length;
+  return TAG_PALETTE[idx];
+}
+
+const DEFAULT_CARDS = [
+  { id: 1, title: 'Plan marketing campaign',           tags: ['Marketing'],           date: 'Sep 20', checklist: '0/3', col: 'todo' },
+  { id: 2, title: 'Approve legal agreement',           tags: ['Legal'],               date: '',       checklist: '',    col: 'todo' },
+  { id: 3, title: 'Schedule recurring client meeting', tags: ['Marketing'],           date: '',       checklist: '',    col: 'todo' },
+  { id: 4, title: 'Collect design assets',             tags: ['External','Design'],   date: 'Mar 23', checklist: '1/3', col: 'inprogress' },
+  { id: 5, title: 'Create 10 T-shirt options for launch day', tags: ['Production','Design'], date: 'Aug 26', checklist: '0/4', col: 'inprogress' },
+  { id: 6, title: 'Update online shop',                tags: ['Sales'],               date: 'Sep 15', checklist: '',    col: 'inprogress' },
+  { id: 7, title: 'Review legal agreement',            tags: ['Legal'],               date: 'Jun 30', checklist: '',    col: 'done' },
+  { id: 8, title: 'Customer survey',                   tags: ['External','Marketing'],date: 'Jun 3',  checklist: '5/5', col: 'done' },
+];
+
+// ── LOCALSTORAGE ──────────────────────────────────────
+const LS_KEY = 'kanban_cards';
+const LS_ID  = 'kanban_nextId';
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    return saved ? JSON.parse(saved) : DEFAULT_CARDS;
+  } catch { return DEFAULT_CARDS; }
+}
+function saveData() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(cards));
+    localStorage.setItem(LS_ID, String(nextId));
+    showSaved();
+  } catch(e) { console.warn('저장 실패', e); }
+}
+function showSaved() {
+  const el = document.getElementById('savedBadge');
+  if (!el) return;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.opacity = '0', 1800);
+}
+function resetAll() {
+  if (!confirm('모든 카드를 초기화할까요?')) return;
+  localStorage.removeItem(LS_KEY);
+  localStorage.removeItem(LS_ID);
+  cards = DEFAULT_CARDS.map(c => ({...c}));
+  nextId = 9;
+  renderAll();
+}
+
+let cards = loadData();
+let nextId = parseInt(localStorage.getItem(LS_ID) || '9', 10);
+
+// ── DRAG STATE ────────────────────────────────────────
+let dragId = null;
+let dragOverCol = null;
+
+// ── RENDER ────────────────────────────────────────────
+function renderAll() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const board = document.getElementById('board');
+  const addBtn = board.querySelector('.add-list-btn');
+
+  // remove old columns
+  board.querySelectorAll('.column').forEach(el => el.remove());
+
+  COLUMNS.forEach(col => {
+    const colCards = cards.filter(c => c.col === col.id && (
+      !q || c.title.toLowerCase().includes(q) ||
+      c.tags.some(t => t.toLowerCase().includes(q))
+    ));
+
+    const colEl = document.createElement('div');
+    colEl.className = 'column';
+    colEl.dataset.col = col.id;
+
+    colEl.addEventListener('dragover', e => {
+      e.preventDefault();
+      dragOverCol = col.id;
+      document.querySelectorAll('.column').forEach(c => c.classList.remove('drag-over'));
+      colEl.classList.add('drag-over');
+      colEl.querySelector('.empty-drop').classList.toggle('active', colCards.length === 0);
+    });
+    colEl.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragId !== null) {
+        cards = cards.map(c => c.id === dragId ? { ...c, col: col.id } : c);
+        dragId = null;
+        saveData();
+      }
+      document.querySelectorAll('.column').forEach(c => c.classList.remove('drag-over'));
+      renderAll();
+    });
+
+    // Header
+    colEl.innerHTML = `
+      <div class="col-header">
+        <span class="col-title">${col.label}</span>
+        <button class="col-menu">•••</button>
+      </div>
+      <div class="cards-list" id="cards-${col.id}"></div>
+      <div class="add-form" id="form-${col.id}">
+        <textarea rows="2" placeholder="카드 제목을 입력하세요..." id="ft-${col.id}"></textarea>
+        <input placeholder="태그 (예: Marketing, Design)" id="ftags-${col.id}">
+        <input placeholder="날짜 (예: Sep 20)" id="fdate-${col.id}">
+        <div class="add-form-btns">
+          <button class="btn-add" onclick="submitAdd('${col.id}')">카드 추가</button>
+          <button class="btn-cancel-form" onclick="closeForm('${col.id}')">✕</button>
+        </div>
+      </div>
+      <button class="add-card-btn" id="addbtn-${col.id}" onclick="openForm('${col.id}')">
+        <span style="font-size:16px">+</span> Add another card
+      </button>
+    `;
+
+    board.insertBefore(colEl, addBtn);
+
+    const list = colEl.querySelector(`#cards-${col.id}`);
+
+    // Empty drop zone
+    const emptyDrop = document.createElement('div');
+    emptyDrop.className = 'empty-drop';
+    list.appendChild(emptyDrop);
+
+    // Cards
+    colCards.forEach(card => {
+      const cardEl = document.createElement('div');
+      cardEl.className = 'card';
+      cardEl.draggable = true;
+      cardEl.dataset.id = card.id;
+
+      // Check done state
+      const clDone = (() => {
+        if (!card.checklist) return false;
+        const [a, b] = card.checklist.split('/');
+        return a && b && a === b && a !== '0';
+      })();
+      const dateDone = card.col === 'done';
+
+      const tagsHtml = card.tags.map(t => {
+        const s = tagStyle(t);
+        return `<span class="tag" style="background:${s.bg};color:${s.text}">${t}</span>`;
+      }).join('');
+
+      const metaHtml = (card.date || card.checklist) ? `
+        <div class="card-meta">
+          ${card.date ? `<span class="meta-date ${dateDone ? 'meta-done' : ''}">🕐 ${card.date}</span>` : ''}
+          ${card.checklist ? `<span class="meta-check ${clDone ? 'meta-done' : ''}">☑ ${card.checklist}</span>` : ''}
+        </div>` : '';
+
+      cardEl.innerHTML = `
+        <div class="card-actions">
+          <button onclick="openEdit(${card.id})">✏️</button>
+          <button onclick="deleteCard(${card.id})">✕</button>
+        </div>
+        ${card.tags.length ? `<div class="card-tags">${tagsHtml}</div>` : ''}
+        <div class="card-title">${card.title}</div>
+        ${metaHtml}
+      `;
+
+      cardEl.addEventListener('dragstart', e => {
+        dragId = card.id;
+        cardEl.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      cardEl.addEventListener('dragend', () => {
+        cardEl.classList.remove('dragging');
+        document.querySelectorAll('.column').forEach(c => c.classList.remove('drag-over'));
+      });
+
+      list.insertBefore(cardEl, emptyDrop);
+    });
+
+    // Re-attach textarea keydown
+    const ta = colEl.querySelector(`#ft-${col.id}`);
+    if (ta) {
+      ta.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitAdd(col.id); }
+        if (e.key === 'Escape') closeForm(col.id);
+      });
+    }
+  });
+}
+
+// ── FORM ACTIONS ──────────────────────────────────────
+function openForm(colId) {
+  document.getElementById(`form-${colId}`).classList.add('open');
+  document.getElementById(`addbtn-${colId}`).style.display = 'none';
+  setTimeout(() => document.getElementById(`ft-${colId}`).focus(), 50);
+}
+function closeForm(colId) {
+  document.getElementById(`form-${colId}`).classList.remove('open');
+  document.getElementById(`addbtn-${colId}`).style.display = '';
+  document.getElementById(`ft-${colId}`).value = '';
+  document.getElementById(`ftags-${colId}`).value = '';
+  document.getElementById(`fdate-${colId}`).value = '';
+}
+function submitAdd(colId) {
+  const title = document.getElementById(`ft-${colId}`).value.trim();
+  if (!title) return;
+  const tags = document.getElementById(`ftags-${colId}`).value.split(',').map(t => t.trim()).filter(Boolean);
+  const date = document.getElementById(`fdate-${colId}`).value.trim();
+  cards.push({ id: nextId++, title, tags, date, checklist: '', col: colId });
+  closeForm(colId);
+  saveData();
+  renderAll();
+}
+
+// ── CARD ACTIONS ──────────────────────────────────────
+function deleteCard(id) {
+  cards = cards.filter(c => c.id !== id);
+  saveData();
+  renderAll();
+}
+
+let editingId = null;
+function openEdit(id) {
+  const card = cards.find(c => c.id === id);
+  if (!card) return;
+  editingId = id;
+  document.getElementById('editTitle').value = card.title;
+  document.getElementById('editTags').value = card.tags.join(', ');
+  document.getElementById('editDate').value = card.date;
+  document.getElementById('editChecklist').value = card.checklist;
+  document.getElementById('editCol').value = card.col;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function saveEdit() {
+  const card = cards.find(c => c.id === editingId);
+  if (!card) return;
+  card.title = document.getElementById('editTitle').value.trim();
+  card.tags = document.getElementById('editTags').value.split(',').map(t => t.trim()).filter(Boolean);
+  card.date = document.getElementById('editDate').value.trim();
+  card.checklist = document.getElementById('editChecklist').value.trim();
+  card.col = document.getElementById('editCol').value;
+  document.getElementById('modalOverlay').classList.remove('open');
+  saveData();
+  renderAll();
+}
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+}
+
+// ── SERVICE WORKER ────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ── INIT ──────────────────────────────────────────────
+renderAll();
+</script>
+</body>
+</html>

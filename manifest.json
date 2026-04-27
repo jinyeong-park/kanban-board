@@ -1,0 +1,24 @@
+{
+  "name": "My Kanban Board",
+  "short_name": "Kanban",
+  "description": "Trello 스타일 칸반보드",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#c8a97e",
+  "theme_color": "#c8601a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
