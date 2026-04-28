@@ -766,20 +766,6 @@ function renderAnalytics() {
     </div>`;
   }).join('');
 
-  const distRows = [
-    { label: '0-1d', key: 'same', cls: 'fast' },
-    { label: '2-3d', key: 'short', cls: '' },
-    { label: '4-7d', key: 'mid', cls: 'slow' },
-    { label: '7+d',  key: 'long', cls: 'very-slow' },
-  ].map(r => {
-    const pct = Math.round((dist[r.key] / distTotal) * 100);
-    return `<div class="dist-row">
-      <div class="dist-label">${r.label}</div>
-      <div class="dist-track"><div class="dist-fill ${r.cls}" style="width:${pct}%"></div></div>
-      <div class="dist-count">${dist[r.key]}</div>
-    </div>`;
-  }).join('');
-
   const insightsHtml = [
     byDow[bestDow] > 0 ? `
       <div class="insight-card">
