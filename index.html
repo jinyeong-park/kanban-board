@@ -584,8 +584,24 @@ const LS_CURR   = 'kanban_current';
 function loadBoards() {
   try {
     const saved = localStorage.getItem(LS_BOARDS);
-    return saved ? JSON.parse(saved) : [{ id: 'b1', name: 'Board 1' }];
-  } catch { return [{ id: 'b1', name: 'Board 1' }]; }
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length === 2 && parsed[0].id === 'b1' && parsed[0].name === 'Board 1' && parsed[1].id === 'b2') {
+        parsed[0].name = 'Daily Tracker';
+        localStorage.setItem(LS_BOARDS, JSON.stringify(parsed));
+      }
+      return parsed;
+    }
+    return [
+      { id: 'b1', name: 'Daily Tracker', type: 'generic' },
+      { id: 'b2', name: 'Job Tracker', type: 'job' }
+    ];
+  } catch {
+    return [
+      { id: 'b1', name: 'Daily Tracker', type: 'generic' },
+      { id: 'b2', name: 'Job Tracker', type: 'job' }
+    ];
+  }
 }
 let boards = loadBoards();
 let currentBoardId = localStorage.getItem(LS_CURR) || boards[0].id;
@@ -596,6 +612,7 @@ if (!localStorage.getItem(LS_BOARDS)) {
     const v = localStorage.getItem(k);
     if (v) localStorage.setItem(`${k}_b1`, v);
   });
+  localStorage.setItem(`${LS_COLS}_b2`, JSON.stringify(JOB_DEFAULT_COLUMNS));
   localStorage.setItem(LS_BOARDS, JSON.stringify(boards));
 }
 
