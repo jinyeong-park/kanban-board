@@ -269,7 +269,9 @@
   <span style="color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer">☆</span>
   <span class="subnav-right">⊕ Workspace visible</span>
   <span id="savedBadge" style="color:#fff;font-size:12px;opacity:0;transition:opacity 0.4s;margin-left:4px;">✅ 저장됨</span>
-  <button onclick="resetAll()" style="margin-left:6px;background:rgba(255,255,255,0.15);border:none;border-radius:4px;padding:5px 10px;color:rgba(255,255,255,0.8);font-size:12px;cursor:pointer;" title="초기 데이터로 리셋">🔄 초기화</button>
+  <button onclick="exportData()" style="margin-left:6px;background:rgba(255,255,255,0.15);border:none;border-radius:4px;padding:5px 10px;color:rgba(255,255,255,0.8);font-size:12px;cursor:pointer;" title="JSON으로 내보내기">⬇ 내보내기</button>
+  <label style="margin-left:4px;background:rgba(255,255,255,0.15);border-radius:4px;padding:5px 10px;color:rgba(255,255,255,0.8);font-size:12px;cursor:pointer;" title="JSON 파일 가져오기">⬆ 가져오기<input type="file" accept=".json" onchange="importData(event)" style="display:none"></label>
+  <button onclick="resetAll()" style="margin-left:4px;background:rgba(255,255,255,0.15);border:none;border-radius:4px;padding:5px 10px;color:rgba(255,255,255,0.8);font-size:12px;cursor:pointer;" title="전체 삭제">🔄 초기화</button>
 </div>
 
 <!-- BOARD -->
@@ -557,6 +559,43 @@ function submitAdd(colId) {
   closeForm(colId);
   saveData();
   renderAll();
+}
+
+// ── EXPORT / IMPORT ───────────────────────────────────
+function exportData() {
+  const data = { columns: COLUMNS, cards, nextId };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `kanban-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.columns) || !Array.isArray(data.cards)) {
+        alert('올바른 kanban JSON 파일이 아닙니다.');
+        return;
+      }
+      if (!confirm(`"${file.name}" 파일로 보드를 덮어쓸까요?`)) return;
+      COLUMNS = data.columns;
+      cards = data.cards;
+      nextId = data.nextId || (Math.max(0, ...cards.map(c => c.id)) + 1);
+      saveData();
+      renderAll();
+    } catch {
+      alert('파일을 읽는 중 오류가 발생했습니다.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
 }
 
 // ── ADD LIST ──────────────────────────────────────────
