@@ -75,7 +75,21 @@
   .log-page.open { display: block; }
   .log-header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+  }
+  .log-body {
+    display: flex; gap: 20px; align-items: flex-start;
+  }
+  .log-left {
+    flex: 1; min-width: 0;
+    max-height: calc(100vh - 160px); overflow-y: auto;
+    padding-right: 4px;
+  }
+  .log-left::-webkit-scrollbar { width: 4px; }
+  .log-left::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
+  .log-right {
+    flex: 0 0 420px; min-width: 320px;
+    max-height: calc(100vh - 160px); overflow-y: auto;
   }
   .log-header h2 { color: #fff; font-size: 20px; font-weight: 800; }
   .log-export-btn {
@@ -94,13 +108,75 @@
   }
   .log-items { list-style: none; display: flex; flex-direction: column; gap: 4px; }
   .log-items li {
-    font-size: 13px; color: #172b4d; padding: 3px 0;
-    display: flex; align-items: center; gap: 7px;
+    font-size: 13px; color: #172b4d; padding: 5px 0;
+    display: flex; align-items: flex-start; gap: 7px; flex-direction: column;
   }
-  .log-items li::before {
-    content: '✓'; color: #00C851; font-weight: 800; flex-shrink: 0;
+  .log-items li::before { display: none; }
+  .log-item-title {
+    display: flex; align-items: center; gap: 6px; font-weight: 600;
+  }
+  .log-item-title::before {
+    content: '✓'; color: #00C851; font-weight: 800;
+  }
+  .log-item-meta {
+    font-size: 11px; color: #5e6c84; margin-left: 18px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .log-item-days {
+    background: #e3fcef; color: #006644; font-weight: 700;
+    border-radius: 4px; padding: 1px 7px; font-size: 11px;
+    margin-left: 4px;
   }
   .log-empty { color: rgba(255,255,255,0.75); font-size: 14px; text-align: center; margin-top: 60px; }
+
+  /* ANALYTICS */
+  .analytics-title {
+    color: #fff; font-size: 16px; font-weight: 800;
+    margin-bottom: 14px; letter-spacing: 0.02em;
+  }
+
+  .stat-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .stat-card {
+    flex: 1; min-width: 120px;
+    background: rgba(255,255,255,0.92); border-radius: 10px;
+    padding: 14px 16px; box-shadow: 0 2px 8px rgba(9,30,66,0.12);
+  }
+  .stat-label { font-size: 11px; font-weight: 700; color: #5e6c84; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 800; color: #172b4d; line-height: 1; }
+  .stat-sub { font-size: 11px; color: #5e6c84; margin-top: 4px; }
+  .stat-up { color: #00875a; }
+  .stat-down { color: #de350b; }
+
+  .charts-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+
+  .chart-card {
+    background: rgba(255,255,255,0.92); border-radius: 10px;
+    padding: 16px 18px; box-shadow: 0 2px 8px rgba(9,30,66,0.12);
+  }
+  .chart-card.wide { flex: 2; min-width: 280px; }
+  .chart-card.narrow { flex: 1; min-width: 180px; }
+  .chart-title { font-size: 12px; font-weight: 700; color: #5e6c84; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+
+  .bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 70px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
+  .bar { width: 100%; background: #0052cc; border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.3s; }
+  .bar.today { background: #00875a; }
+  .bar.empty { background: #dfe1e6; }
+  .bar-label { font-size: 9px; color: #5e6c84; white-space: nowrap; }
+
+
+  .insights-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .insight-card {
+    flex: 1; min-width: 160px;
+    background: rgba(255,255,255,0.92); border-radius: 10px;
+    padding: 12px 16px; box-shadow: 0 2px 8px rgba(9,30,66,0.12);
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .insight-icon { font-size: 20px; flex-shrink: 0; line-height: 1.2; }
+  .insight-text { font-size: 12px; color: #172b4d; line-height: 1.5; }
+  .insight-text strong { display: block; font-size: 13px; margin-bottom: 2px; }
+  .insight-card.warn { background: #fff8e1; }
+  .insight-card.danger { background: #fff4f4; }
 
   /* BOARD */
   .board {
@@ -317,7 +393,7 @@
 <!-- SUB NAV -->
 <div class="subnav">
   <button class="subnav-btn active" id="btnBoard" onclick="showPage('board')">⊞ Board</button>
-  <button class="subnav-btn" id="btnLog" onclick="showPage('log')">📋 Daily Log</button>
+  <button class="subnav-btn" id="btnLog" onclick="showPage('log')">📋 Daily Log & Analytics</button>
   <span class="board-title">My Kanban Board</span>
   <span style="color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer">☆</span>
 <span id="savedBadge" style="color:#fff;font-size:12px;opacity:0;transition:opacity 0.4s;margin-left:4px;">✅ Saved</span>
@@ -345,7 +421,12 @@
     <h2>📋 Daily Done Log</h2>
     <button class="log-export-btn" onclick="exportLog()">⬇ Download Log (.txt)</button>
   </div>
-  <div id="logEntries"></div>
+  <div class="log-body">
+    <div class="log-left" id="logEntries"></div>
+    <div class="log-right">
+      <div class="analytics" id="analyticsSection"></div>
+    </div>
+  </div>
 </div>
 
 <!-- EDIT MODAL -->
@@ -505,40 +586,336 @@ function fmtDate(str) {
   return str; // legacy plain-text format
 }
 
-function logDoneCard(title) {
+function daysBetween(from, to) {
+  if (!from || !to) return null;
+  const diff = new Date(to) - new Date(from);
+  return Math.round(diff / (1000 * 60 * 60 * 24));
+}
+function dayLabel(n) {
+  if (n === null) return '';
+  if (n === 0) return 'same day';
+  return `+${n} ${n === 1 ? 'day' : 'days'}`;
+}
+
+function logDoneCard(title, createdAt, doneAt) {
   const today = todayStr();
   let entry = dailyLog.find(e => e.date === today);
   if (!entry) {
     entry = { date: today, items: [] };
     dailyLog.unshift(entry);
   }
-  if (!entry.items.includes(title)) {
-    entry.items.push(title);
+  const alreadyLogged = entry.items.some(i => (typeof i === 'string' ? i : i.title) === title);
+  if (!alreadyLogged) {
+    entry.items.push({ title, createdAt: createdAt || '', doneAt: doneAt || today });
     saveLog();
   }
 }
 
+function computeStreak() {
+  const dates = new Set(dailyLog.map(e => e.date));
+  let streak = 0;
+  const d = new Date();
+  while (true) {
+    const s = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    if (dates.has(s)) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
+function renderAnalytics() {
+  const el = document.getElementById('analyticsSection');
+  if (!el) return;
+
+  // ── 기본 집계 ──
+  const totalDone = dailyLog.reduce((sum, e) => sum + e.items.length, 0);
+
+  const now = new Date();
+  const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+  const twoWeeksAgo = new Date(now); twoWeeksAgo.setDate(now.getDate() - 14);
+
+  const parseDate = s => new Date(s.replace(/\//g, '-'));
+
+  const thisWeekDone = dailyLog
+    .filter(e => parseDate(e.date) >= weekAgo)
+    .reduce((sum, e) => sum + e.items.length, 0);
+  const lastWeekDone = dailyLog
+    .filter(e => { const d = parseDate(e.date); return d >= twoWeeksAgo && d < weekAgo; })
+    .reduce((sum, e) => sum + e.items.length, 0);
+  const weekDiff = thisWeekDone - lastWeekDone;
+
+  // ── Cycle times ──
+  const cycleTimes = [];
+  dailyLog.forEach(e => e.items.forEach(item => {
+    if (typeof item === 'object' && item.createdAt && item.doneAt) {
+      const d = daysBetween(item.createdAt, item.doneAt);
+      if (d !== null && d >= 0) cycleTimes.push({ days: d, title: item.title, doneAt: item.doneAt });
+    }
+  }));
+  const avgCycle = cycleTimes.length
+    ? (cycleTimes.reduce((a, b) => a + b.days, 0) / cycleTimes.length).toFixed(1)
+    : null;
+
+  const streak = computeStreak();
+
+  // ── 최근 14일 바 차트 ──
+  const todayISO2 = todayISO();
+  const last14 = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const dStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    const entry = dailyLog.find(e => e.date === dStr);
+    last14.push({
+      count: entry ? entry.items.length : 0,
+      label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      isToday: i === 0
+    });
+  }
+  const maxBar = Math.max(1, ...last14.map(d => d.count));
+
+  // ── Cycle time trend SVG ──
+  const sorted = [...cycleTimes]
+    .filter(c => c.doneAt)
+    .sort((a, b) => a.doneAt.localeCompare(b.doneAt));
+
+  const trendSvg = (() => {
+    if (sorted.length === 0) return '<div style="display:flex;align-items:center;justify-content:center;height:90px;color:#5e6c84;font-size:12px;">No data yet</div>';
+    const W = 260, H = 95, padL = 26, padR = 8, padT = 8, padB = 22;
+    const cW = W - padL - padR, cH = H - padT - padB;
+    const n = sorted.length;
+    const maxY = Math.max(...sorted.map(c => c.days), 1);
+    const pts = sorted.map((c, i) => ({
+      x: padL + (n === 1 ? cW / 2 : (i / (n - 1)) * cW),
+      y: padT + cH - (c.days / maxY) * cH,
+      days: c.days, title: c.title, doneAt: c.doneAt,
+    }));
+    // linear regression
+    let trendPath = '';
+    if (n >= 2) {
+      const meanX = pts.reduce((a, p) => a + p.x, 0) / n;
+      const meanY = pts.reduce((a, p) => a + p.y, 0) / n;
+      const slope = pts.reduce((a, p) => a + (p.x - meanX) * (p.y - meanY), 0) /
+                    pts.reduce((a, p) => a + (p.x - meanX) ** 2, 0);
+      const b = meanY - slope * meanX;
+      const x1 = pts[0].x, x2 = pts[n-1].x;
+      const clamp = y => Math.max(padT, Math.min(padT + cH, y));
+      const color = slope <= 0 ? '#00875a' : '#de350b';
+      trendPath = `<line x1="${x1.toFixed(1)}" y1="${clamp(slope*x1+b).toFixed(1)}" x2="${x2.toFixed(1)}" y2="${clamp(slope*x2+b).toFixed(1)}" stroke="${color}" stroke-width="2" stroke-dasharray="5 3" opacity="0.8"/>`;
+    }
+    const polyline = n >= 2
+      ? `<polyline points="${pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="none" stroke="#0052cc" stroke-width="1.5" opacity="0.35"/>`
+      : '';
+    const yTicks = [0, Math.round(maxY / 2), maxY].map(v => {
+      const y = padT + cH - (v / maxY) * cH;
+      return `<text x="${padL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="8" fill="#8993a4">${v}d</text>
+              <line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="#f0f0f0" stroke-width="1"/>`;
+    }).join('');
+    const xIdxs = n === 1 ? [0] : [...new Set([0, Math.floor((n-1)/2), n-1])];
+    const xTicks = xIdxs.map(i => {
+      const d = new Date(sorted[i].doneAt);
+      return `<text x="${pts[i].x.toFixed(1)}" y="${padT+cH+14}" text-anchor="middle" font-size="8" fill="#8993a4">${d.getMonth()+1}/${d.getDate()}</text>`;
+    }).join('');
+    const dots = pts.map(p =>
+      `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="#0052cc" stroke="#fff" stroke-width="1.2">
+        <title>${p.title} — ${p.days}d (${fmtDate(p.doneAt)})</title>
+      </circle>`
+    ).join('');
+    const axes = `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+cH}" stroke="#dfe1e6" stroke-width="1"/>
+                  <line x1="${padL}" y1="${padT+cH}" x2="${W-padR}" y2="${padT+cH}" stroke="#dfe1e6" stroke-width="1"/>`;
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">${axes}${yTicks}${xTicks}${polyline}${trendPath}${dots}</svg>`;
+  })();
+
+  // trend direction label
+  let trendLabel = '';
+  if (sorted.length >= 2) {
+    const first = sorted.slice(0, Math.ceil(sorted.length / 2));
+    const last  = sorted.slice(Math.floor(sorted.length / 2));
+    const avg = arr => arr.reduce((a, b) => a + b.days, 0) / arr.length;
+    const diff = avg(last) - avg(first);
+    trendLabel = diff < -0.5
+      ? '<span style="color:#00875a;font-size:11px;font-weight:700;">▼ Getting faster</span>'
+      : diff > 0.5
+      ? '<span style="color:#de350b;font-size:11px;font-weight:700;">▲ Taking longer</span>'
+      : '<span style="color:#5e6c84;font-size:11px;">→ Steady pace</span>';
+  }
+
+  // ── 요일별 생산성 ──
+  const byDow = [0,0,0,0,0,0,0];
+  dailyLog.forEach(e => { byDow[parseDate(e.date).getDay()] += e.items.length; });
+  const bestDow = byDow.indexOf(Math.max(...byDow));
+  const dowNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  // ── Aging WIP (5일 이상 미이동 카드) ──
+  const agingCards = cards.filter(c => c.col !== 'done' && c.createdAt && daysBetween(c.createdAt, todayISO2) >= 5);
+
+  // ── 가장 빠른/느린 완료 ──
+  const fastest = cycleTimes.length ? cycleTimes.reduce((a, b) => a.days <= b.days ? a : b) : null;
+  const slowest = cycleTimes.length ? cycleTimes.reduce((a, b) => a.days >= b.days ? a : b) : null;
+
+  // ── 렌더 ──
+  const weekArrow = weekDiff > 0 ? `<span class="stat-up">▲ ${weekDiff} vs last week</span>`
+    : weekDiff < 0 ? `<span class="stat-down">▼ ${Math.abs(weekDiff)} vs last week</span>`
+    : `<span>same as last week</span>`;
+
+  const barsHtml = last14.map(d => {
+    const h = Math.round((d.count / maxBar) * 60);
+    const cls = d.count === 0 ? 'empty' : d.isToday ? 'today' : '';
+    return `<div class="bar-col">
+      <div class="bar ${cls}" style="height:${d.count === 0 ? 4 : h}px" title="${d.count} done"></div>
+      <div class="bar-label">${d.label}</div>
+    </div>`;
+  }).join('');
+
+  const distRows = [
+    { label: '0-1d', key: 'same', cls: 'fast' },
+    { label: '2-3d', key: 'short', cls: '' },
+    { label: '4-7d', key: 'mid', cls: 'slow' },
+    { label: '7+d',  key: 'long', cls: 'very-slow' },
+  ].map(r => {
+    const pct = Math.round((dist[r.key] / distTotal) * 100);
+    return `<div class="dist-row">
+      <div class="dist-label">${r.label}</div>
+      <div class="dist-track"><div class="dist-fill ${r.cls}" style="width:${pct}%"></div></div>
+      <div class="dist-count">${dist[r.key]}</div>
+    </div>`;
+  }).join('');
+
+  const insightsHtml = [
+    byDow[bestDow] > 0 ? `
+      <div class="insight-card">
+        <div class="insight-icon">📅</div>
+        <div class="insight-text">
+          <strong>Most productive day</strong>
+          ${dowNames[bestDow]} — ${byDow[bestDow]} tasks done
+        </div>
+      </div>` : '',
+    agingCards.length > 0 ? `
+      <div class="insight-card danger">
+        <div class="insight-icon">⚠️</div>
+        <div class="insight-text">
+          <strong>${agingCards.length} stale card${agingCards.length > 1 ? 's' : ''}</strong>
+          Sitting untouched for 5+ days
+        </div>
+      </div>` : `
+      <div class="insight-card">
+        <div class="insight-icon">✅</div>
+        <div class="insight-text">
+          <strong>No stale cards</strong>
+          Everything is moving!
+        </div>
+      </div>`,
+    fastest ? `
+      <div class="insight-card">
+        <div class="insight-icon">⚡</div>
+        <div class="insight-text">
+          <strong>Fastest done</strong>
+          "${fastest.title.length > 28 ? fastest.title.slice(0,28)+'…' : fastest.title}"
+          — ${dayLabel(fastest.days)}
+        </div>
+      </div>` : '',
+    slowest && slowest.days > 1 ? `
+      <div class="insight-card warn">
+        <div class="insight-icon">🐢</div>
+        <div class="insight-text">
+          <strong>Took the longest</strong>
+          "${slowest.title.length > 28 ? slowest.title.slice(0,28)+'…' : slowest.title}"
+          — ${dayLabel(slowest.days)}
+        </div>
+      </div>` : '',
+  ].filter(Boolean).join('');
+
+  el.innerHTML = `
+    <div class="analytics-title">Analytics</div>
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Today</div>
+        <div class="stat-value">${last14[last14.length - 1].count}</div>
+        <div class="stat-sub">done today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Week</div>
+        <div class="stat-value">${thisWeekDone}</div>
+        <div class="stat-sub">${weekArrow}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Done</div>
+        <div class="stat-value">${totalDone}</div>
+        <div class="stat-sub">all time</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Cycle Time</div>
+        <div class="stat-value">${avgCycle !== null ? avgCycle : '—'}</div>
+        <div class="stat-sub">${avgCycle !== null ? 'days to done' : 'no data yet'}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🔥 Streak</div>
+        <div class="stat-value">${streak}</div>
+        <div class="stat-sub">${streak === 1 ? 'day' : 'days'} in a row</div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card wide">
+        <div class="chart-title">Daily Completions — last 14 days</div>
+        <div class="bar-chart">${barsHtml}</div>
+      </div>
+      <div class="chart-card narrow">
+        <div class="chart-title">Cycle Time Trend</div>
+        ${trendSvg}
+        <div style="margin-top:4px;text-align:right">${trendLabel}</div>
+      </div>
+    </div>
+    <div class="insights-row">${insightsHtml}</div>
+  `;
+}
+
 function renderLog() {
+  renderAnalytics();
   const el = document.getElementById('logEntries');
   if (!el) return;
   if (dailyLog.length === 0) {
     el.innerHTML = '<p class="log-empty">No done items recorded yet.<br>Move cards to the Done column to start logging.</p>';
     return;
   }
-  el.innerHTML = dailyLog.map(entry => `
-    <div class="log-entry">
-      <div class="log-date">${entry.date}</div>
-      <ul class="log-items">
-        ${entry.items.map(item => `<li>${item}</li>`).join('')}
-      </ul>
-    </div>
-  `).join('');
+  el.innerHTML = dailyLog.map(entry => {
+    const itemsHtml = entry.items.map(item => {
+      // backward compat: old entries stored as plain string
+      const title     = typeof item === 'string' ? item : item.title;
+      const createdAt = typeof item === 'string' ? '' : item.createdAt;
+      const doneAt    = typeof item === 'string' ? '' : item.doneAt;
+      const days      = daysBetween(createdAt, doneAt);
+      const meta = (createdAt || doneAt) ? `
+        <span class="log-item-meta">
+          ${createdAt ? `Created ${fmtDate(createdAt)}` : ''}
+          ${createdAt && doneAt ? ' → ' : ''}
+          ${doneAt ? `Done ${fmtDate(doneAt)}` : ''}
+          ${days !== null ? `<span class="log-item-days">${dayLabel(days)}</span>` : ''}
+        </span>` : '';
+      return `<li><span class="log-item-title">${title}</span>${meta}</li>`;
+    }).join('');
+    return `
+      <div class="log-entry">
+        <div class="log-date">${entry.date}</div>
+        <ul class="log-items">${itemsHtml}</ul>
+      </div>`;
+  }).join('');
 }
 
 function exportLog() {
-  const lines = dailyLog.map(entry =>
-    `${entry.date}\n${entry.items.map(i => `  ✓ ${i}`).join('\n')}`
-  ).join('\n\n');
+  const lines = dailyLog.map(entry => {
+    const itemLines = entry.items.map(item => {
+      const title     = typeof item === 'string' ? item : item.title;
+      const createdAt = typeof item === 'string' ? '' : item.createdAt;
+      const doneAt    = typeof item === 'string' ? '' : item.doneAt;
+      const days      = daysBetween(createdAt, doneAt);
+      const meta = [
+        createdAt ? `created ${fmtDate(createdAt)}` : '',
+        doneAt    ? `done ${fmtDate(doneAt)}` : '',
+        days !== null ? dayLabel(days) : '',
+      ].filter(Boolean).join(' → ');
+      return `  ✓ ${title}${meta ? `  (${meta})` : ''}`;
+    }).join('\n');
+    return `${entry.date}\n${itemLines}`;
+  }).join('\n\n');
   const blob = new Blob([lines || '(empty)'], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -603,7 +980,7 @@ function renderAll() {
       if (dragId !== null) {
         const dragged = cards.find(c => c.id === dragId);
         const movingToDone = dragged && col.id === 'done' && dragged.col !== 'done';
-        if (movingToDone) logDoneCard(dragged.title);
+        if (movingToDone) logDoneCard(dragged.title, dragged.createdAt, todayISO());
         cards = cards.map(c => c.id === dragId ? {
           ...c,
           col: col.id,
@@ -735,7 +1112,7 @@ function submitAdd(colId) {
   const date = document.getElementById(`fdate-${colId}`).value.trim();
   const doneAt = colId === 'done' ? todayISO() : '';
   cards.push({ id: nextId++, title, tags, date, checklist: '', col: colId, createdAt: todayISO(), doneAt });
-  if (colId === 'done') logDoneCard(title);
+  if (colId === 'done') logDoneCard(title, todayISO(), todayISO());
   closeForm(colId);
   saveData();
   renderAll();
@@ -869,7 +1246,7 @@ function saveEdit() {
   card.col = newCol;
   card.createdAt = document.getElementById('editCreatedAt').value || card.createdAt || '';
   card.doneAt = movingToDone ? todayISO() : document.getElementById('editDoneAt').value || '';
-  if (movingToDone) logDoneCard(newTitle);
+  if (movingToDone) logDoneCard(newTitle, card.createdAt, todayISO());
   document.getElementById('modalOverlay').classList.remove('open');
   saveData();
   renderAll();
