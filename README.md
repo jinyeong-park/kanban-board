@@ -1,4 +1,4 @@
-# 🚀 CoreStep: Dual Track Kanban
+# 🚀 CoreStep: Free Kanban To-Do List & Job Tracker | JYNLAB
 
 > **Daily Tasks, Career Milestones. One Board.**
 
@@ -7,6 +7,9 @@
 ## 🔗 Live Demo
 
 **No installation required. Start tracking now:** 👉 [https://jinyeong-park.github.io/kanban-board/](https://jinyeong-park.github.io/kanban-board/)
+
+URL: jynlab.com/free-kanban-tracker
+
 
 ---
 
