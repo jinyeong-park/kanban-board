@@ -62,8 +62,45 @@
     display: flex; align-items: center; gap: 10px;
   }
   .subnav-btn { background: rgba(255,255,255,0.20); border-radius: 4px; padding: 5px 10px; color: #fff; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+  .subnav-btn.active { background: rgba(255,255,255,0.45); color: #172b4d; }
   .board-title { color: #fff; font-weight: 800; font-size: 15px; margin-left: 6px; }
   .subnav-right { margin-left: auto; background: rgba(255,255,255,0.20); border-radius: 4px; padding: 5px 12px; color: #fff; font-size: 12px; font-weight: 500; }
+
+  /* DAILY LOG PAGE */
+  .log-page {
+    display: none;
+    padding: 24px 28px;
+    min-height: calc(100vh - 88px);
+  }
+  .log-page.open { display: block; }
+  .log-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .log-header h2 { color: #fff; font-size: 20px; font-weight: 800; }
+  .log-export-btn {
+    background: rgba(255,255,255,0.22); border: none; border-radius: 6px;
+    padding: 7px 16px; color: #fff; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  .log-entry {
+    background: rgba(255,255,255,0.92); border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(9,30,66,0.12);
+  }
+  .log-date {
+    font-size: 13px; font-weight: 800; color: #0052cc;
+    margin-bottom: 8px; letter-spacing: 0.03em;
+  }
+  .log-items { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .log-items li {
+    font-size: 13px; color: #172b4d; padding: 3px 0;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .log-items li::before {
+    content: '✓'; color: #00C851; font-weight: 800; flex-shrink: 0;
+  }
+  .log-empty { color: rgba(255,255,255,0.75); font-size: 14px; text-align: center; margin-top: 60px; }
 
   /* BOARD */
   .board {
@@ -93,6 +130,21 @@
   }
   .col-title { font-weight: 700; font-size: 14px; color: #172b4d; }
   .col-menu { background: none; border: none; color: #6b778c; font-size: 16px; cursor: pointer; padding: 0 4px; border-radius: 4px; letter-spacing: 1px; }
+  .col-menu:hover { background: rgba(9,30,66,0.08); }
+  .col-header { position: relative; }
+  .col-dropdown {
+    position: absolute; top: 28px; right: 8px; z-index: 200;
+    background: #fff; border-radius: 6px; min-width: 150px;
+    box-shadow: 0 4px 16px rgba(9,30,66,0.22);
+    padding: 4px 0; display: none;
+  }
+  .col-dropdown.open { display: block; }
+  .col-dropdown button {
+    display: block; width: 100%; text-align: left;
+    background: none; border: none; padding: 8px 14px;
+    font-size: 13px; color: #de350b; cursor: pointer;
+  }
+  .col-dropdown button:hover { background: #fff4f4; }
 
   .cards-list {
     padding: 0 8px;
@@ -264,7 +316,8 @@
 
 <!-- SUB NAV -->
 <div class="subnav">
-  <button class="subnav-btn">⊞ Board</button>
+  <button class="subnav-btn active" id="btnBoard" onclick="showPage('board')">⊞ Board</button>
+  <button class="subnav-btn" id="btnLog" onclick="showPage('log')">📋 Daily Log</button>
   <span class="board-title">My Kanban Board</span>
   <span style="color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer">☆</span>
 <span id="savedBadge" style="color:#fff;font-size:12px;opacity:0;transition:opacity 0.4s;margin-left:4px;">✅ Saved</span>
@@ -286,24 +339,37 @@
   <button class="add-list-btn" id="addListBtn" onclick="openAddListForm()">+ Add another list</button>
 </div>
 
+<!-- DAILY LOG PAGE -->
+<div class="log-page" id="logPage">
+  <div class="log-header">
+    <h2>📋 Daily Done Log</h2>
+    <button class="log-export-btn" onclick="exportLog()">⬇ Download Log (.txt)</button>
+  </div>
+  <div id="logEntries"></div>
+</div>
+
 <!-- EDIT MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-top">
-      <div class="modal-label">✏️ 카드 수정</div>
+      <div class="modal-label">✏️ Edit Card</div>
       <textarea id="editTitle" rows="2"></textarea>
     </div>
     <div class="modal-body">
-      <div><label>태그 (쉼표 구분)</label><input id="editTags"></div>
-      <div><label>날짜</label><input id="editDate" placeholder="예: Sep 20"></div>
-      <div><label>체크리스트 (예: 2/4)</label><input id="editChecklist"></div>
+      <div><label>Tags (comma separated)</label><input id="editTags"></div>
+      <div><label>Due Date</label><input type="date" id="editDate"></div>
+      <div><label>Checklist (e.g. 2/4)</label><input id="editChecklist"></div>
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1"><label>Created</label><input type="date" id="editCreatedAt"></div>
+        <div style="flex:1" id="editDoneAtRow"><label>Done Date</label><input type="date" id="editDoneAt"></div>
+      </div>
       <div>
-        <label>컬럼</label>
+        <label>Column</label>
         <select id="editCol"></select>
       </div>
       <div class="modal-btns">
-        <button class="btn-save" onclick="saveEdit()">저장</button>
-        <button class="btn-cancel" onclick="document.getElementById('modalOverlay').classList.remove('open')">취소</button>
+        <button class="btn-save" onclick="saveEdit()">Save</button>
+        <button class="btn-cancel" onclick="document.getElementById('modalOverlay').classList.remove('open')">Cancel</button>
       </div>
     </div>
   </div>
@@ -369,6 +435,7 @@ const DEFAULT_CARDS = [
 // ── LOCALSTORAGE ──────────────────────────────────────
 const LS_KEY = 'kanban_cards';
 const LS_ID  = 'kanban_nextId';
+const LS_LOG = 'kanban_daily_log';
 
 function loadData() {
   try {
@@ -404,6 +471,102 @@ function resetAll() {
 let cards = loadData();
 let nextId = parseInt(localStorage.getItem(LS_ID) || '9', 10);
 
+// ── DAILY LOG ─────────────────────────────────────────
+function loadLog() {
+  try {
+    const saved = localStorage.getItem(LS_LOG);
+    return saved ? JSON.parse(saved) : [];
+  } catch { return []; }
+}
+let dailyLog = loadLog();
+
+function saveLog() {
+  try { localStorage.setItem(LS_LOG, JSON.stringify(dailyLog)); } catch(e) { console.warn('log save failed', e); }
+}
+
+function todayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}/${m}/${day}`;
+}
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDate(str) {
+  if (!str) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const [, m, d] = str.split('-');
+    return `${months[parseInt(m,10)-1]} ${parseInt(d,10)}`;
+  }
+  return str; // legacy plain-text format
+}
+
+function logDoneCard(title) {
+  const today = todayStr();
+  let entry = dailyLog.find(e => e.date === today);
+  if (!entry) {
+    entry = { date: today, items: [] };
+    dailyLog.unshift(entry);
+  }
+  if (!entry.items.includes(title)) {
+    entry.items.push(title);
+    saveLog();
+  }
+}
+
+function renderLog() {
+  const el = document.getElementById('logEntries');
+  if (!el) return;
+  if (dailyLog.length === 0) {
+    el.innerHTML = '<p class="log-empty">No done items recorded yet.<br>Move cards to the Done column to start logging.</p>';
+    return;
+  }
+  el.innerHTML = dailyLog.map(entry => `
+    <div class="log-entry">
+      <div class="log-date">${entry.date}</div>
+      <ul class="log-items">
+        ${entry.items.map(item => `<li>${item}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+}
+
+function exportLog() {
+  const lines = dailyLog.map(entry =>
+    `${entry.date}\n${entry.items.map(i => `  ✓ ${i}`).join('\n')}`
+  ).join('\n\n');
+  const blob = new Blob([lines || '(empty)'], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `done-log-${todayStr().replace(/\//g, '-')}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showPage(page) {
+  const board = document.getElementById('board');
+  const logPage = document.getElementById('logPage');
+  const btnBoard = document.getElementById('btnBoard');
+  const btnLog = document.getElementById('btnLog');
+  if (page === 'log') {
+    board.style.display = 'none';
+    logPage.classList.add('open');
+    btnBoard.classList.remove('active');
+    btnLog.classList.add('active');
+    renderLog();
+  } else {
+    board.style.display = '';
+    logPage.classList.remove('open');
+    btnBoard.classList.add('active');
+    btnLog.classList.remove('active');
+  }
+}
+
 // ── DRAG STATE ────────────────────────────────────────
 let dragId = null;
 let dragOverCol = null;
@@ -438,7 +601,14 @@ function renderAll() {
     colEl.addEventListener('drop', e => {
       e.preventDefault();
       if (dragId !== null) {
-        cards = cards.map(c => c.id === dragId ? { ...c, col: col.id } : c);
+        const dragged = cards.find(c => c.id === dragId);
+        const movingToDone = dragged && col.id === 'done' && dragged.col !== 'done';
+        if (movingToDone) logDoneCard(dragged.title);
+        cards = cards.map(c => c.id === dragId ? {
+          ...c,
+          col: col.id,
+          doneAt: movingToDone ? todayISO() : (col.id !== 'done' ? '' : c.doneAt)
+        } : c);
         dragId = null;
         saveData();
       }
@@ -450,15 +620,18 @@ function renderAll() {
     colEl.innerHTML = `
       <div class="col-header">
         <span class="col-title">${col.label}</span>
-        <button class="col-menu">•••</button>
+        <button class="col-menu" onclick="toggleColMenu(event,'${col.id}')">•••</button>
+        <div class="col-dropdown" id="colmenu-${col.id}">
+          <button onclick="deleteList('${col.id}')">🗑 Delete List</button>
+        </div>
       </div>
       <div class="cards-list" id="cards-${col.id}"></div>
       <div class="add-form" id="form-${col.id}">
-        <textarea rows="2" placeholder="카드 제목을 입력하세요..." id="ft-${col.id}"></textarea>
-        <input placeholder="태그 (예: Marketing, Design)" id="ftags-${col.id}">
-        <input placeholder="날짜 (예: Sep 20)" id="fdate-${col.id}">
+        <textarea rows="2" placeholder="Enter card title..." id="ft-${col.id}"></textarea>
+        <input placeholder="Tags (e.g. Marketing, Design)" id="ftags-${col.id}">
+        <input type="date" id="fdate-${col.id}" title="Due date (optional)">
         <div class="add-form-btns">
-          <button class="btn-add" onclick="submitAdd('${col.id}')">카드 추가</button>
+          <button class="btn-add" onclick="submitAdd('${col.id}')">Add Card</button>
           <button class="btn-cancel-form" onclick="closeForm('${col.id}')">✕</button>
         </div>
       </div>
@@ -496,9 +669,15 @@ function renderAll() {
         return `<span class="tag" style="background:${s.bg};color:${s.text}">${t}</span>`;
       }).join('');
 
-      const metaHtml = (card.date || card.checklist) ? `
+      const createdStr = fmtDate(card.createdAt || '');
+      const doneStr    = fmtDate(card.doneAt || '');
+      const dueStr     = fmtDate(card.date || '');
+      const isDone     = card.col === 'done';
+      const metaHtml = (createdStr || dueStr || doneStr || card.checklist) ? `
         <div class="card-meta">
-          ${card.date ? `<span class="meta-date ${dateDone ? 'meta-done' : ''}">🕐 ${card.date}</span>` : ''}
+          ${createdStr ? `<span class="meta-date" title="Created">📅 ${createdStr}</span>` : ''}
+          ${!isDone && dueStr ? `<span class="meta-date" title="Due">⏰ ${dueStr}</span>` : ''}
+          ${isDone && doneStr ? `<span class="meta-date meta-done" title="Completed">✓ ${doneStr}</span>` : ''}
           ${card.checklist ? `<span class="meta-check ${clDone ? 'meta-done' : ''}">☑ ${card.checklist}</span>` : ''}
         </div>` : '';
 
@@ -554,7 +733,9 @@ function submitAdd(colId) {
   if (!title) return;
   const tags = document.getElementById(`ftags-${colId}`).value.split(',').map(t => t.trim()).filter(Boolean);
   const date = document.getElementById(`fdate-${colId}`).value.trim();
-  cards.push({ id: nextId++, title, tags, date, checklist: '', col: colId });
+  const doneAt = colId === 'done' ? todayISO() : '';
+  cards.push({ id: nextId++, title, tags, date, checklist: '', col: colId, createdAt: todayISO(), doneAt });
+  if (colId === 'done') logDoneCard(title);
   closeForm(colId);
   saveData();
   renderAll();
@@ -562,7 +743,7 @@ function submitAdd(colId) {
 
 // ── EXPORT / IMPORT ───────────────────────────────────
 function exportData() {
-  const data = { columns: COLUMNS, cards, nextId };
+  const data = { columns: COLUMNS, cards, nextId, dailyLog };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -580,23 +761,48 @@ function importData(event) {
     try {
       const data = JSON.parse(e.target.result);
       if (!Array.isArray(data.columns) || !Array.isArray(data.cards)) {
-        alert('올바른 kanban JSON 파일이 아닙니다.');
+        alert('Invalid kanban JSON file.');
         return;
       }
-      if (!confirm(`"${file.name}" 파일로 보드를 덮어쓸까요?`)) return;
+      if (!confirm(`Import "${file.name}"? This will overwrite the current board.`)) return;
       COLUMNS = data.columns;
       cards = data.cards;
       nextId = data.nextId || (Math.max(0, ...cards.map(c => c.id)) + 1);
+      if (Array.isArray(data.dailyLog)) { dailyLog = data.dailyLog; saveLog(); }
       saveData();
       renderAll();
     } catch {
-      alert('파일을 읽는 중 오류가 발생했습니다.');
+      alert('Failed to read the file.');
     }
   };
   reader.readAsText(file);
   event.target.value = '';
 }
 
+// ── LIST ACTIONS ──────────────────────────────────────
+function toggleColMenu(e, colId) {
+  e.stopPropagation();
+  const menu = document.getElementById(`colmenu-${colId}`);
+  const isOpen = menu.classList.contains('open');
+  document.querySelectorAll('.col-dropdown').forEach(m => m.classList.remove('open'));
+  if (!isOpen) menu.classList.add('open');
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.col-dropdown').forEach(m => m.classList.remove('open'));
+});
+
+function deleteList(colId) {
+  const col = COLUMNS.find(c => c.id === colId);
+  const cardCount = cards.filter(c => c.col === colId).length;
+  const msg = cardCount > 0
+    ? `Delete "${col.label}"? The ${cardCount} card(s) inside will also be deleted.`
+    : `Delete "${col.label}"?`;
+  if (!confirm(msg)) return;
+  COLUMNS = COLUMNS.filter(c => c.id !== colId);
+  cards = cards.filter(c => c.col !== colId);
+  saveData();
+  renderAll();
+}
 // ── ADD LIST ──────────────────────────────────────────
 function openAddListForm() {
   document.getElementById('addListForm').classList.add('open');
@@ -640,8 +846,11 @@ function openEdit(id) {
   editingId = id;
   document.getElementById('editTitle').value = card.title;
   document.getElementById('editTags').value = card.tags.join(', ');
-  document.getElementById('editDate').value = card.date;
+  document.getElementById('editDate').value = card.date || '';
   document.getElementById('editChecklist').value = card.checklist;
+  document.getElementById('editCreatedAt').value = card.createdAt || '';
+  document.getElementById('editDoneAt').value = card.doneAt || '';
+  document.getElementById('editDoneAtRow').style.display = card.col === 'done' ? '' : 'none';
   const sel = document.getElementById('editCol');
   sel.innerHTML = COLUMNS.map(c => `<option value="${c.id}"${c.id === card.col ? ' selected' : ''}>${c.label}</option>`).join('');
   document.getElementById('modalOverlay').classList.add('open');
@@ -649,11 +858,18 @@ function openEdit(id) {
 function saveEdit() {
   const card = cards.find(c => c.id === editingId);
   if (!card) return;
-  card.title = document.getElementById('editTitle').value.trim();
+  const wasNotDone = card.col !== 'done';
+  const newTitle = document.getElementById('editTitle').value.trim();
+  const newCol = document.getElementById('editCol').value;
+  const movingToDone = newCol === 'done' && wasNotDone;
+  card.title = newTitle;
   card.tags = document.getElementById('editTags').value.split(',').map(t => t.trim()).filter(Boolean);
-  card.date = document.getElementById('editDate').value.trim();
+  card.date = document.getElementById('editDate').value;
   card.checklist = document.getElementById('editChecklist').value.trim();
-  card.col = document.getElementById('editCol').value;
+  card.col = newCol;
+  card.createdAt = document.getElementById('editCreatedAt').value || card.createdAt || '';
+  card.doneAt = movingToDone ? todayISO() : document.getElementById('editDoneAt').value || '';
+  if (movingToDone) logDoneCard(newTitle);
   document.getElementById('modalOverlay').classList.remove('open');
   saveData();
   renderAll();
