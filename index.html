@@ -189,6 +189,23 @@
     display: flex; align-items: center; gap: 5px;
     height: fit-content; white-space: nowrap; border: none;
   }
+  .add-list-form {
+    flex: 0 0 270px;
+    background: #ebecf0;
+    border-radius: 10px;
+    padding: 10px 10px 8px;
+    display: none; flex-direction: column; gap: 7px;
+    height: fit-content;
+  }
+  .add-list-form.open { display: flex; }
+  .add-list-form input {
+    border: 2px solid #0052cc; border-radius: 4px;
+    padding: 7px 10px; font-size: 13px; color: #172b4d;
+    outline: none; font-family: inherit; width: 100%;
+  }
+  .add-list-form-btns { display: flex; gap: 6px; align-items: center; }
+  .btn-add-list { background: #0052cc; border: none; border-radius: 4px; color: #fff; font-weight: 700; font-size: 13px; padding: 6px 14px; cursor: pointer; }
+  .btn-cancel-list { background: none; border: none; color: #6b778c; font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; }
 
   /* MODAL */
   .modal-overlay {
@@ -258,7 +275,14 @@
 <!-- BOARD -->
 <div class="board" id="board">
   <!-- columns injected by JS -->
-  <button class="add-list-btn">+ Add another list</button>
+  <div class="add-list-form" id="addListForm">
+    <input id="newListTitle" placeholder="리스트 이름을 입력하세요..." maxlength="60">
+    <div class="add-list-form-btns">
+      <button class="btn-add-list" onclick="submitAddList()">리스트 추가</button>
+      <button class="btn-cancel-list" onclick="closeAddListForm()">✕</button>
+    </div>
+  </div>
+  <button class="add-list-btn" id="addListBtn" onclick="openAddListForm()">+ Add another list</button>
 </div>
 
 <!-- EDIT MODAL -->
@@ -274,11 +298,7 @@
       <div><label>체크리스트 (예: 2/4)</label><input id="editChecklist"></div>
       <div>
         <label>컬럼</label>
-        <select id="editCol">
-          <option value="todo">To Do</option>
-          <option value="inprogress">In Progress</option>
-          <option value="done">Done</option>
-        </select>
+        <select id="editCol"></select>
       </div>
       <div class="modal-btns">
         <button class="btn-save" onclick="saveEdit()">저장</button>
@@ -290,11 +310,19 @@
 
 <script>
 // ── DATA ──────────────────────────────────────────────
-const COLUMNS = [
+const DEFAULT_COLUMNS = [
   { id: 'todo',    label: 'To Do' },
   { id: 'inprogress', label: 'In Progress' },
   { id: 'done',       label: 'Done' },
 ];
+const LS_COLS = 'kanban_columns';
+function loadColumns() {
+  try {
+    const saved = localStorage.getItem(LS_COLS);
+    return saved ? JSON.parse(saved) : DEFAULT_COLUMNS.map(c => ({...c}));
+  } catch { return DEFAULT_COLUMNS.map(c => ({...c})); }
+}
+let COLUMNS = loadColumns();
 
 const TAG_COLORS = {
   'Marketing':  { bg: '#FF8C00', text: '#fff' },
@@ -351,6 +379,7 @@ function saveData() {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(cards));
     localStorage.setItem(LS_ID, String(nextId));
+    localStorage.setItem(LS_COLS, JSON.stringify(COLUMNS));
     showSaved();
   } catch(e) { console.warn('저장 실패', e); }
 }
@@ -362,11 +391,12 @@ function showSaved() {
   el._t = setTimeout(() => el.style.opacity = '0', 1800);
 }
 function resetAll() {
-  if (!confirm('모든 카드를 초기화할까요?')) return;
+  if (!confirm('모든 카드를 삭제할까요?')) return;
   localStorage.removeItem(LS_KEY);
   localStorage.removeItem(LS_ID);
-  cards = DEFAULT_CARDS.map(c => ({...c}));
-  nextId = 9;
+  cards = [];
+  nextId = 1;
+  saveData();
   renderAll();
 }
 
@@ -381,7 +411,8 @@ let dragOverCol = null;
 function renderAll() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const board = document.getElementById('board');
-  const addBtn = board.querySelector('.add-list-btn');
+  const addListForm = document.getElementById('addListForm');
+  const addBtn = document.getElementById('addListBtn');
 
   // remove old columns
   board.querySelectorAll('.column').forEach(el => el.remove());
@@ -435,7 +466,7 @@ function renderAll() {
       </button>
     `;
 
-    board.insertBefore(colEl, addBtn);
+    board.insertBefore(colEl, addListForm);
 
     const list = colEl.querySelector(`#cards-${col.id}`);
 
@@ -528,6 +559,35 @@ function submitAdd(colId) {
   renderAll();
 }
 
+// ── ADD LIST ──────────────────────────────────────────
+function openAddListForm() {
+  document.getElementById('addListForm').classList.add('open');
+  document.getElementById('addListBtn').style.display = 'none';
+  setTimeout(() => document.getElementById('newListTitle').focus(), 50);
+}
+function closeAddListForm() {
+  document.getElementById('addListForm').classList.remove('open');
+  document.getElementById('addListBtn').style.display = '';
+  document.getElementById('newListTitle').value = '';
+}
+function submitAddList() {
+  const label = document.getElementById('newListTitle').value.trim();
+  if (!label) return;
+  const id = 'col_' + Date.now();
+  COLUMNS.push({ id, label });
+  closeAddListForm();
+  saveData();
+  renderAll();
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement === document.getElementById('newListTitle')) {
+    submitAddList();
+  }
+  if (e.key === 'Escape' && document.getElementById('addListForm').classList.contains('open')) {
+    closeAddListForm();
+  }
+});
+
 // ── CARD ACTIONS ──────────────────────────────────────
 function deleteCard(id) {
   cards = cards.filter(c => c.id !== id);
@@ -544,7 +604,8 @@ function openEdit(id) {
   document.getElementById('editTags').value = card.tags.join(', ');
   document.getElementById('editDate').value = card.date;
   document.getElementById('editChecklist').value = card.checklist;
-  document.getElementById('editCol').value = card.col;
+  const sel = document.getElementById('editCol');
+  sel.innerHTML = COLUMNS.map(c => `<option value="${c.id}"${c.id === card.col ? ' selected' : ''}>${c.label}</option>`).join('');
   document.getElementById('modalOverlay').classList.add('open');
 }
 function saveEdit() {
