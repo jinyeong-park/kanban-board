@@ -1,7 +1,7 @@
 {
   "name": "My Kanban Board",
   "short_name": "Kanban",
-  "description": "Trello 스타일 칸반보드",
+  "description": "Trello and Huntr in One for Personal productivity toolß",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#c8a97e",
