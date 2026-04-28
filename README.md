@@ -6,7 +6,7 @@
 
 ## 🔗 Live Demo
 
-**No installation required. Start tracking now:** 👉 [https://jinyeong-park.github.io/kanban-board/](https://jinyeong-park.github.io/kanban-board/)
+**No installation required. Start tracking now:** 👉 [https://jinyeong-park.github.io/kanban-board/](https://jinyeong-park.github.io/free-kanban-tracker/)
 
 URL: jynlab.com/free-kanban-tracker
 
