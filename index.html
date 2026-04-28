@@ -64,6 +64,20 @@
   .subnav-btn { background: rgba(255,255,255,0.20); border-radius: 4px; padding: 5px 10px; color: #fff; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
   .subnav-btn.active { background: rgba(255,255,255,0.45); color: #172b4d; }
   .board-title { color: #fff; font-weight: 800; font-size: 15px; margin-left: 6px; }
+  .board-tabs { display: flex; align-items: center; gap: 4px; margin-left: 10px; }
+  .board-tab {
+    background: rgba(255,255,255,0.15); border: none; border-radius: 4px;
+    padding: 5px 12px; color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  .board-tab:hover { background: rgba(255,255,255,0.25); }
+  .board-tab.active { background: rgba(255,255,255,0.45); color: #172b4d; }
+  .board-tab-add {
+    background: none; border: none; color: rgba(255,255,255,0.7);
+    font-size: 18px; font-weight: 300; cursor: pointer; padding: 2px 6px;
+    border-radius: 4px; line-height: 1;
+  }
+  .board-tab-add:hover { background: rgba(255,255,255,0.15); color: #fff; }
   .subnav-right { margin-left: auto; background: rgba(255,255,255,0.20); border-radius: 4px; padding: 5px 12px; color: #fff; font-size: 12px; font-weight: 500; }
 
   /* DAILY LOG PAGE */
@@ -365,6 +379,28 @@
   .modal-btns { display: flex; gap: 8px; margin-top: 4px; }
   .btn-save { flex: 1; background: #0052cc; border: none; border-radius: 4px; color: #fff; font-weight: 700; font-size: 13px; padding: 9px; cursor: pointer; }
   .btn-cancel { background: none; border: none; color: #6b778c; font-size: 13px; padding: 9px 14px; cursor: pointer; }
+
+  /* JOB CARD */
+  .job-company { font-size: 11px; font-weight: 700; color: #0052cc; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+  .job-title-text { font-size: 14px; font-weight: 700; color: #172b4d; line-height: 1.4; }
+  .job-desc { font-size: 11px; color: #5e6c84; margin-top: 4px; line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .job-status-badge {
+    display: inline-block; font-size: 10px; font-weight: 700; border-radius: 3px;
+    padding: 2px 7px; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+
+  /* FUNNEL CHART */
+  .funnel { display: flex; flex-direction: column; gap: 8px; }
+  .funnel-row { display: flex; align-items: center; gap: 10px; }
+  .funnel-label { font-size: 11px; font-weight: 700; color: #5e6c84; width: 72px; flex-shrink: 0; text-transform: uppercase; }
+  .funnel-track { flex: 1; background: #f4f5f7; border-radius: 4px; height: 22px; position: relative; overflow: hidden; }
+  .funnel-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; min-width: 24px; transition: width 0.4s; }
+  .funnel-fill.f-wishlist  { background: #6554c0; }
+  .funnel-fill.f-applied   { background: #0052cc; }
+  .funnel-fill.f-interview { background: #ff7452; }
+  .funnel-fill.f-offer     { background: #00875a; }
+  .funnel-rate { font-size: 11px; color: #5e6c84; width: 44px; text-align: right; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -394,7 +430,8 @@
 <div class="subnav">
   <button class="subnav-btn active" id="btnBoard" onclick="showPage('board')">⊞ Board</button>
   <button class="subnav-btn" id="btnLog" onclick="showPage('log')">📋 Daily Log & Analytics</button>
-  <span class="board-title">My Kanban Board</span>
+  <div class="board-tabs" id="boardTabs"></div>
+  <span class="board-title" id="boardTitle"></span>
   <span style="color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer">☆</span>
 <span id="savedBadge" style="color:#fff;font-size:12px;opacity:0;transition:opacity 0.4s;margin-left:4px;">✅ Saved</span>
   <button onclick="exportData()" style="margin-left:6px;background:rgba(255,255,255,0.15);border:none;border-radius:4px;padding:5px 10px;color:rgba(255,255,255,0.8);font-size:12px;cursor:pointer;" title="Export as JSON">⬇ Export</button>
@@ -437,9 +474,16 @@
       <textarea id="editTitle" rows="2"></textarea>
     </div>
     <div class="modal-body">
-      <div><label>Tags (comma separated)</label><input id="editTags"></div>
-      <div><label>Due Date</label><input type="date" id="editDate"></div>
-      <div><label>Checklist (e.g. 2/4)</label><input id="editChecklist"></div>
+      <div id="jobEditFields" style="display:none;flex-direction:column;gap:10px;">
+        <div><label>Company</label><input id="editCompany" placeholder="e.g. Google"></div>
+        <div><label>Job Title</label><input id="editJobTitle" placeholder="e.g. Product Manager"></div>
+        <div><label>Description</label><textarea id="editDescription" rows="3" style="border:1px solid #dfe1e6;border-radius:4px;padding:7px 10px;font-size:13px;color:#172b4d;outline:none;width:100%;font-family:inherit;resize:vertical;"></textarea></div>
+      </div>
+      <div id="genericEditFields" style="display:contents">
+        <div><label>Tags (comma separated)</label><input id="editTags"></div>
+        <div><label>Due Date</label><input type="date" id="editDate"></div>
+        <div><label>Checklist (e.g. 2/4)</label><input id="editChecklist"></div>
+      </div>
       <div style="display:flex;gap:10px;">
         <div style="flex:1"><label>Created</label><input type="date" id="editCreatedAt"></div>
         <div style="flex:1" id="editDoneAtRow"><label>Done Date</label><input type="date" id="editDoneAt"></div>
@@ -459,14 +503,30 @@
 <script>
 // ── DATA ──────────────────────────────────────────────
 const DEFAULT_COLUMNS = [
-  { id: 'todo',    label: 'To Do' },
-  { id: 'inprogress', label: 'In Progress' },
-  { id: 'done',       label: 'Done' },
+  { id: 'todo',      label: 'To Do' },
+  { id: 'inprogress',label: 'In Progress' },
+  { id: 'done',      label: 'Done' },
 ];
+const JOB_DEFAULT_COLUMNS = [
+  { id: 'wishlist',  label: 'WISHLIST' },
+  { id: 'applied',   label: 'APPLIED' },
+  { id: 'interview', label: 'INTERVIEW' },
+  { id: 'offer',     label: 'OFFER' },
+];
+const JOB_COL_STYLES = {
+  wishlist:  { bg: '#6554c0', text: '#fff' },
+  applied:   { bg: '#0052cc', text: '#fff' },
+  interview: { bg: '#ff7452', text: '#fff' },
+  offer:     { bg: '#00875a', text: '#fff' },
+};
+function getBoardType() {
+  const cur = boards.find(b => b.id === currentBoardId);
+  return cur ? (cur.type || 'generic') : 'generic';
+}
 const LS_COLS = 'kanban_columns';
 function loadColumns() {
   try {
-    const saved = localStorage.getItem(LS_COLS);
+    const saved = localStorage.getItem(bk(LS_COLS));
     return saved ? JSON.parse(saved) : DEFAULT_COLUMNS.map(c => ({...c}));
   } catch { return DEFAULT_COLUMNS.map(c => ({...c})); }
 }
@@ -514,21 +574,82 @@ const DEFAULT_CARDS = [
 ];
 
 // ── LOCALSTORAGE ──────────────────────────────────────
-const LS_KEY = 'kanban_cards';
-const LS_ID  = 'kanban_nextId';
-const LS_LOG = 'kanban_daily_log';
+const LS_KEY    = 'kanban_cards';
+const LS_ID     = 'kanban_nextId';
+const LS_LOG    = 'kanban_daily_log';
+const LS_BOARDS = 'kanban_boards';
+const LS_CURR   = 'kanban_current';
+
+// ── MULTI-BOARD ───────────────────────────────────────
+function loadBoards() {
+  try {
+    const saved = localStorage.getItem(LS_BOARDS);
+    return saved ? JSON.parse(saved) : [{ id: 'b1', name: 'Board 1' }];
+  } catch { return [{ id: 'b1', name: 'Board 1' }]; }
+}
+let boards = loadBoards();
+let currentBoardId = localStorage.getItem(LS_CURR) || boards[0].id;
+
+// migrate legacy keys (no suffix) → b1 on first multi-board run
+if (!localStorage.getItem(LS_BOARDS)) {
+  ['kanban_cards','kanban_nextId','kanban_columns'].forEach(k => {
+    const v = localStorage.getItem(k);
+    if (v) localStorage.setItem(`${k}_b1`, v);
+  });
+  localStorage.setItem(LS_BOARDS, JSON.stringify(boards));
+}
+
+function bk(base) { return `${base}_${currentBoardId}`; }
+
+function switchBoard(id) {
+  currentBoardId = id;
+  localStorage.setItem(LS_CURR, id);
+  COLUMNS = loadColumns();
+  cards   = loadData();
+  nextId  = parseInt(localStorage.getItem(bk(LS_ID)) || '1', 10);
+  renderBoardTabs();
+  renderAll();
+}
+
+function addBoard() {
+  const name = prompt('New board name:');
+  if (!name || !name.trim()) return;
+  const isJob = confirm(`Set "${name.trim()}" up as a Job Tracker?\n\nOK → Job Tracker (Wishlist / Applied / Interview / Offer)\nCancel → General Board`);
+  const id = 'b' + Date.now();
+  const type = isJob ? 'job' : 'generic';
+  boards.push({ id, name: name.trim(), type });
+  localStorage.setItem(LS_BOARDS, JSON.stringify(boards));
+  if (isJob) {
+    localStorage.setItem(`${LS_COLS}_${id}`, JSON.stringify(JOB_DEFAULT_COLUMNS));
+  }
+  switchBoard(id);
+}
+
+function renderBoardTabs() {
+  const el = document.getElementById('boardTabs');
+  if (!el) return;
+  el.innerHTML = boards.map(b =>
+    `<button class="board-tab${b.id === currentBoardId ? ' active' : ''}" onclick="switchBoard('${b.id}')">${b.name}</button>`
+  ).join('') + `<button class="board-tab-add" onclick="addBoard()" title="Add board">+</button>`;
+  const titleEl = document.getElementById('boardTitle');
+  if (titleEl) {
+    const cur = boards.find(b => b.id === currentBoardId);
+    titleEl.textContent = cur ? cur.name : '';
+  }
+}
 
 function loadData() {
   try {
-    const saved = localStorage.getItem(LS_KEY);
-    return saved ? JSON.parse(saved) : DEFAULT_CARDS;
-  } catch { return DEFAULT_CARDS; }
+    const saved = localStorage.getItem(bk(LS_KEY));
+    return saved ? JSON.parse(saved) : (currentBoardId === 'b1' ? DEFAULT_CARDS : []);
+  } catch { return []; }
 }
 function saveData() {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify(cards));
-    localStorage.setItem(LS_ID, String(nextId));
-    localStorage.setItem(LS_COLS, JSON.stringify(COLUMNS));
+    localStorage.setItem(bk(LS_KEY), JSON.stringify(cards));
+    localStorage.setItem(bk(LS_ID), String(nextId));
+    localStorage.setItem(bk(LS_COLS), JSON.stringify(COLUMNS));
+    localStorage.setItem(LS_LOG, JSON.stringify(dailyLog));
     showSaved();
   } catch(e) { console.warn('저장 실패', e); }
 }
@@ -540,9 +661,10 @@ function showSaved() {
   el._t = setTimeout(() => el.style.opacity = '0', 1800);
 }
 function resetAll() {
-  if (!confirm('모든 카드를 삭제할까요?')) return;
-  localStorage.removeItem(LS_KEY);
-  localStorage.removeItem(LS_ID);
+  const cur = boards.find(b => b.id === currentBoardId);
+  if (!confirm(`Clear all cards in "${cur ? cur.name : 'this board'}"?`)) return;
+  localStorage.removeItem(bk(LS_KEY));
+  localStorage.removeItem(bk(LS_ID));
   cards = [];
   nextId = 1;
   saveData();
@@ -550,7 +672,7 @@ function resetAll() {
 }
 
 let cards = loadData();
-let nextId = parseInt(localStorage.getItem(LS_ID) || '9', 10);
+let nextId = parseInt(localStorage.getItem(bk(LS_ID)) || '1', 10);
 
 // ── DAILY LOG ─────────────────────────────────────────
 function loadLog() {
@@ -854,7 +976,107 @@ function renderAnalytics() {
   `;
 }
 
+function renderJobAnalytics() {
+  const el = document.getElementById('analyticsSection');
+  if (!el) return;
+  const counts = { wishlist: 0, applied: 0, interview: 0, offer: 0 };
+  cards.forEach(c => { if (counts[c.col] !== undefined) counts[c.col]++; });
+  const total = cards.length;
+  const maxCount = Math.max(1, ...Object.values(counts));
+
+  // Weekly applied trend (last 8 weeks)
+  const weeklyData = [];
+  for (let i = 7; i >= 0; i--) {
+    const wStart = new Date(); wStart.setDate(wStart.getDate() - i * 7 - wStart.getDay());
+    const wEnd   = new Date(wStart); wEnd.setDate(wStart.getDate() + 7);
+    const count  = cards.filter(c => {
+      if (!c.createdAt) return false;
+      const d = new Date(c.createdAt);
+      return d >= wStart && d < wEnd;
+    }).length;
+    weeklyData.push({ label: `W${8-i}`, count });
+  }
+  const maxW = Math.max(1, ...weeklyData.map(d => d.count));
+
+  const funnelRows = [
+    { key: 'wishlist',  label: 'Wishlist',  cls: 'f-wishlist' },
+    { key: 'applied',   label: 'Applied',   cls: 'f-applied' },
+    { key: 'interview', label: 'Interview', cls: 'f-interview' },
+    { key: 'offer',     label: 'Offer',     cls: 'f-offer' },
+  ].map((r, i, arr) => {
+    const pct = Math.round((counts[r.key] / maxCount) * 100);
+    const prev = i > 0 ? counts[arr[i-1].key] : null;
+    const rate = prev ? `${Math.round((counts[r.key] / prev) * 100)}%` : '';
+    return `<div class="funnel-row">
+      <div class="funnel-label">${r.label}</div>
+      <div class="funnel-track">
+        <div class="funnel-fill ${r.cls}" style="width:${Math.max(pct,4)}%">${counts[r.key]}</div>
+      </div>
+      <div class="funnel-rate">${rate}</div>
+    </div>`;
+  }).join('');
+
+  const barsHtml = weeklyData.map(d => {
+    const h = Math.round((d.count / maxW) * 60);
+    return `<div class="bar-col">
+      <div class="bar${d.count === 0 ? ' empty' : ''}" style="height:${d.count === 0 ? 4 : h}px" title="${d.count} added"></div>
+      <div class="bar-label">${d.label}</div>
+    </div>`;
+  }).join('');
+
+  const interviewRate = counts.applied > 0 ? Math.round((counts.interview / counts.applied) * 100) : 0;
+  const offerRate     = counts.interview > 0 ? Math.round((counts.offer / counts.interview) * 100) : 0;
+
+  el.innerHTML = `
+    <div class="analytics-title">Job Tracker Analytics</div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${total}</div><div class="stat-sub">applications</div></div>
+      <div class="stat-card"><div class="stat-label">Applied</div><div class="stat-value">${counts.applied}</div><div class="stat-sub">sent out</div></div>
+      <div class="stat-card"><div class="stat-label">Interview %</div><div class="stat-value">${interviewRate}%</div><div class="stat-sub">of applied</div></div>
+      <div class="stat-card"><div class="stat-label">Offer %</div><div class="stat-value">${offerRate}%</div><div class="stat-sub">of interviews</div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card narrow"><div class="chart-title">Pipeline Funnel</div><div class="funnel">${funnelRows}</div></div>
+      <div class="chart-card wide"><div class="chart-title">Applications Added — last 8 weeks</div><div class="bar-chart">${barsHtml}</div></div>
+    </div>
+  `;
+}
+
+function renderJobLog() {
+  const el = document.getElementById('logEntries');
+  if (!el) return;
+  if (cards.length === 0) {
+    el.innerHTML = '<p class="log-empty">No applications yet.<br>Add your first application!</p>';
+    return;
+  }
+  const byCol = {};
+  COLUMNS.forEach(c => { byCol[c.id] = []; });
+  cards.forEach(c => { if (byCol[c.col]) byCol[c.col].push(c); });
+
+  el.innerHTML = COLUMNS.map(col => {
+    const items = byCol[col.id] || [];
+    if (!items.length) return '';
+    const colStyle = JOB_COL_STYLES[col.id] || { bg: '#dfe1e6', text: '#172b4d' };
+    const itemsHtml = items.map(c => `
+      <div class="log-entry" style="margin-bottom:8px;">
+        ${c.company ? `<div style="font-size:11px;font-weight:700;color:#0052cc;text-transform:uppercase;">${c.company}</div>` : ''}
+        <div style="font-size:13px;font-weight:700;color:#172b4d;">${c.jobTitle || c.title || ''}</div>
+        ${c.description ? `<div style="font-size:11px;color:#5e6c84;margin-top:3px;">${c.description.slice(0,120)}${c.description.length > 120 ? '…' : ''}</div>` : ''}
+        ${c.createdAt ? `<div style="font-size:11px;color:#8993a4;margin-top:4px;">Added ${fmtDate(c.createdAt)}</div>` : ''}
+      </div>`).join('');
+    return `<div style="margin-bottom:16px;">
+      <div class="log-date" style="color:${colStyle.bg};margin-bottom:8px;">${col.label} (${items.length})</div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+}
+
 function renderLog() {
+  if (getBoardType() === 'job') {
+    renderJobAnalytics();
+    renderJobLog();
+    return;
+  }
   renderAnalytics();
   const el = document.getElementById('logEntries');
   if (!el) return;
@@ -944,10 +1166,15 @@ function renderAll() {
   // remove old columns
   board.querySelectorAll('.column').forEach(el => el.remove());
 
+  const boardType = getBoardType();
+
   COLUMNS.forEach(col => {
     const colCards = cards.filter(c => c.col === col.id && (
-      !q || c.title.toLowerCase().includes(q) ||
-      c.tags.some(t => t.toLowerCase().includes(q))
+      !q ||
+      (c.title || '').toLowerCase().includes(q) ||
+      (c.company || '').toLowerCase().includes(q) ||
+      (c.jobTitle || '').toLowerCase().includes(q) ||
+      (c.tags || []).some(t => t.toLowerCase().includes(q))
     ));
 
     const colEl = document.createElement('div');
@@ -990,16 +1217,26 @@ function renderAll() {
       </div>
       <div class="cards-list" id="cards-${col.id}"></div>
       <div class="add-form" id="form-${col.id}">
-        <textarea rows="2" placeholder="Enter card title..." id="ft-${col.id}"></textarea>
-        <input placeholder="Tags (e.g. Marketing, Design)" id="ftags-${col.id}">
-        <input type="date" id="fdate-${col.id}" title="Due date (optional)">
-        <div class="add-form-btns">
-          <button class="btn-add" onclick="submitAdd('${col.id}')">Add Card</button>
-          <button class="btn-cancel-form" onclick="closeForm('${col.id}')">✕</button>
-        </div>
+        ${boardType === 'job' ? `
+          <input placeholder="Company" id="fcompany-${col.id}" style="font-weight:700;">
+          <input placeholder="Job Title" id="fjobtitle-${col.id}">
+          <textarea rows="2" placeholder="Job Description (optional)" id="fdesc-${col.id}" style="border:1px solid #dfe1e6;border-radius:4px;padding:5px 8px;font-size:12px;width:100%;resize:none;font-family:inherit;outline:none;"></textarea>
+          <div class="add-form-btns">
+            <button class="btn-add" onclick="submitJobAdd('${col.id}')">Add Application</button>
+            <button class="btn-cancel-form" onclick="closeForm('${col.id}')">✕</button>
+          </div>
+        ` : `
+          <textarea rows="2" placeholder="Enter card title..." id="ft-${col.id}"></textarea>
+          <input placeholder="Tags (e.g. Marketing, Design)" id="ftags-${col.id}">
+          <input type="date" id="fdate-${col.id}" title="Due date (optional)">
+          <div class="add-form-btns">
+            <button class="btn-add" onclick="submitAdd('${col.id}')">Add Card</button>
+            <button class="btn-cancel-form" onclick="closeForm('${col.id}')">✕</button>
+          </div>
+        `}
       </div>
       <button class="add-card-btn" id="addbtn-${col.id}" onclick="openForm('${col.id}')">
-        <span style="font-size:16px">+</span> Add another card
+        <span style="font-size:16px">+</span> ${boardType === 'job' ? 'Add application' : 'Add another card'}
       </button>
     `;
 
@@ -1036,23 +1273,38 @@ function renderAll() {
       const doneStr    = fmtDate(card.doneAt || '');
       const dueStr     = fmtDate(card.date || '');
       const isDone     = card.col === 'done';
-      const metaHtml = (createdStr || dueStr || doneStr || card.checklist) ? `
-        <div class="card-meta">
-          ${createdStr ? `<span class="meta-date" title="Created">📅 ${createdStr}</span>` : ''}
-          ${!isDone && dueStr ? `<span class="meta-date" title="Due">⏰ ${dueStr}</span>` : ''}
-          ${isDone && doneStr ? `<span class="meta-date meta-done" title="Completed">✓ ${doneStr}</span>` : ''}
-          ${card.checklist ? `<span class="meta-check ${clDone ? 'meta-done' : ''}">☑ ${card.checklist}</span>` : ''}
-        </div>` : '';
 
-      cardEl.innerHTML = `
-        <div class="card-actions">
-          <button onclick="openEdit(${card.id})">✏️</button>
-          <button onclick="deleteCard(${card.id})">✕</button>
-        </div>
-        ${card.tags.length ? `<div class="card-tags">${tagsHtml}</div>` : ''}
-        <div class="card-title">${card.title}</div>
-        ${metaHtml}
-      `;
+      if (boardType === 'job') {
+        const colStyle = JOB_COL_STYLES[card.col] || { bg: '#dfe1e6', text: '#172b4d' };
+        cardEl.innerHTML = `
+          <div class="card-actions">
+            <button onclick="openEdit(${card.id})">✏️</button>
+            <button onclick="deleteCard(${card.id})">✕</button>
+          </div>
+          ${card.company ? `<div class="job-company">${card.company}</div>` : ''}
+          <div class="job-title-text">${card.jobTitle || card.title || ''}</div>
+          ${card.description ? `<div class="job-desc">${card.description}</div>` : ''}
+          <div><span class="job-status-badge" style="background:${colStyle.bg};color:${colStyle.text}">${card.col}</span></div>
+          ${createdStr ? `<div class="card-meta"><span class="meta-date" title="Added">📅 ${createdStr}</span></div>` : ''}
+        `;
+      } else {
+        const metaHtml = (createdStr || dueStr || doneStr || card.checklist) ? `
+          <div class="card-meta">
+            ${createdStr ? `<span class="meta-date" title="Created">📅 ${createdStr}</span>` : ''}
+            ${!isDone && dueStr ? `<span class="meta-date" title="Due">⏰ ${dueStr}</span>` : ''}
+            ${isDone && doneStr ? `<span class="meta-date meta-done" title="Completed">✓ ${doneStr}</span>` : ''}
+            ${card.checklist ? `<span class="meta-check ${clDone ? 'meta-done' : ''}">☑ ${card.checklist}</span>` : ''}
+          </div>` : '';
+        cardEl.innerHTML = `
+          <div class="card-actions">
+            <button onclick="openEdit(${card.id})">✏️</button>
+            <button onclick="deleteCard(${card.id})">✕</button>
+          </div>
+          ${(card.tags || []).length ? `<div class="card-tags">${tagsHtml}</div>` : ''}
+          <div class="card-title">${card.title}</div>
+          ${metaHtml}
+        `;
+      }
 
       cardEl.addEventListener('dragstart', e => {
         dragId = card.id;
@@ -1082,14 +1334,30 @@ function renderAll() {
 function openForm(colId) {
   document.getElementById(`form-${colId}`).classList.add('open');
   document.getElementById(`addbtn-${colId}`).style.display = 'none';
-  setTimeout(() => document.getElementById(`ft-${colId}`).focus(), 50);
+  const firstInput = getBoardType() === 'job'
+    ? document.getElementById(`fcompany-${colId}`)
+    : document.getElementById(`ft-${colId}`);
+  setTimeout(() => firstInput && firstInput.focus(), 50);
 }
 function closeForm(colId) {
   document.getElementById(`form-${colId}`).classList.remove('open');
   document.getElementById(`addbtn-${colId}`).style.display = '';
-  document.getElementById(`ft-${colId}`).value = '';
-  document.getElementById(`ftags-${colId}`).value = '';
-  document.getElementById(`fdate-${colId}`).value = '';
+  ['ft','ftags','fdate','fcompany','fjobtitle','fdesc'].forEach(p => {
+    const el = document.getElementById(`${p}-${colId}`);
+    if (el) el.value = '';
+  });
+}
+function submitJobAdd(colId) {
+  const company  = (document.getElementById(`fcompany-${colId}`)?.value || '').trim();
+  const jobTitle = (document.getElementById(`fjobtitle-${colId}`)?.value || '').trim();
+  if (!company && !jobTitle) return;
+  const description = (document.getElementById(`fdesc-${colId}`)?.value || '').trim();
+  const title = [jobTitle, company].filter(Boolean).join(' @ ');
+  cards.push({ id: nextId++, title, company, jobTitle, description,
+    tags: [], date: '', checklist: '', col: colId, createdAt: todayISO(), doneAt: '' });
+  closeForm(colId);
+  saveData();
+  renderAll();
 }
 function submitAdd(colId) {
   const title = document.getElementById(`ft-${colId}`).value.trim();
@@ -1207,12 +1475,21 @@ function openEdit(id) {
   const card = cards.find(c => c.id === id);
   if (!card) return;
   editingId = id;
-  document.getElementById('editTitle').value = card.title;
-  document.getElementById('editTags').value = card.tags.join(', ');
-  document.getElementById('editDate').value = card.date || '';
-  document.getElementById('editChecklist').value = card.checklist;
+  const isJob = getBoardType() === 'job';
+  document.getElementById('jobEditFields').style.display    = isJob ? 'flex' : 'none';
+  document.getElementById('genericEditFields').style.display = isJob ? 'none' : 'contents';
+  document.getElementById('editTitle').value = card.title || '';
+  if (isJob) {
+    document.getElementById('editCompany').value     = card.company || '';
+    document.getElementById('editJobTitle').value    = card.jobTitle || '';
+    document.getElementById('editDescription').value = card.description || '';
+  } else {
+    document.getElementById('editTags').value      = (card.tags || []).join(', ');
+    document.getElementById('editDate').value      = card.date || '';
+    document.getElementById('editChecklist').value = card.checklist || '';
+  }
   document.getElementById('editCreatedAt').value = card.createdAt || '';
-  document.getElementById('editDoneAt').value = card.doneAt || '';
+  document.getElementById('editDoneAt').value    = card.doneAt || '';
   document.getElementById('editDoneAtRow').style.display = card.col === 'done' ? '' : 'none';
   const sel = document.getElementById('editCol');
   sel.innerHTML = COLUMNS.map(c => `<option value="${c.id}"${c.id === card.col ? ' selected' : ''}>${c.label}</option>`).join('');
@@ -1222,17 +1499,25 @@ function saveEdit() {
   const card = cards.find(c => c.id === editingId);
   if (!card) return;
   const wasNotDone = card.col !== 'done';
-  const newTitle = document.getElementById('editTitle').value.trim();
   const newCol = document.getElementById('editCol').value;
   const movingToDone = newCol === 'done' && wasNotDone;
-  card.title = newTitle;
-  card.tags = document.getElementById('editTags').value.split(',').map(t => t.trim()).filter(Boolean);
-  card.date = document.getElementById('editDate').value;
-  card.checklist = document.getElementById('editChecklist').value.trim();
-  card.col = newCol;
+  const isJob = getBoardType() === 'job';
+  if (isJob) {
+    card.company     = document.getElementById('editCompany').value.trim();
+    card.jobTitle    = document.getElementById('editJobTitle').value.trim();
+    card.description = document.getElementById('editDescription').value.trim();
+    card.title = [card.jobTitle, card.company].filter(Boolean).join(' @ ');
+  } else {
+    card.title     = document.getElementById('editTitle').value.trim();
+    card.tags      = document.getElementById('editTags').value.split(',').map(t => t.trim()).filter(Boolean);
+    card.date      = document.getElementById('editDate').value;
+    card.checklist = document.getElementById('editChecklist').value.trim();
+  }
+  const newTitle = card.title;
+  card.col       = newCol;
   card.createdAt = document.getElementById('editCreatedAt').value || card.createdAt || '';
-  card.doneAt = movingToDone ? todayISO() : document.getElementById('editDoneAt').value || '';
-  if (movingToDone) logDoneCard(newTitle, card.createdAt, todayISO());
+  card.doneAt    = movingToDone ? todayISO() : document.getElementById('editDoneAt').value || '';
+  if (movingToDone && !isJob) logDoneCard(newTitle, card.createdAt, todayISO());
   document.getElementById('modalOverlay').classList.remove('open');
   saveData();
   renderAll();
@@ -1249,6 +1534,7 @@ if ('serviceWorker' in navigator) {
 }
 
 // ── INIT ──────────────────────────────────────────────
+renderBoardTabs();
 renderAll();
 </script>
 </body>
