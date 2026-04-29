@@ -6,7 +6,7 @@
 
 ## 🔗 Live Demo
 
-**No installation required. Start tracking now:** 👉 [jynlab.com/free-kanban-tracker](jynlab.com/free-kanban-tracker)
+**No installation required. Start tracking now:** 👉 [https://jynlab.com/free-kanban-tracker](https://jynlab.com/free-kanban-tracker)
 
 ---
 
