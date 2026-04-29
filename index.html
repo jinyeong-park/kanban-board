@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -1548,7 +1548,10 @@ function closeModal(e) {
 
 // ── SERVICE WORKER ────────────────────────────────────
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  // './sw.js'로 작성하여 현재 폴더(/free-kanban-tracker/)가 기준임을 명시합니다.
+  navigator.serviceWorker.register('./sw.js', { scope: './' })
+    .then(() => console.log('Kanban Tracker SW Registered'))
+    .catch((err) => console.error('SW Registration Failed:', err));
 }
 
 // ── INIT ──────────────────────────────────────────────
